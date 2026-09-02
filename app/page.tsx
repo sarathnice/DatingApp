@@ -5,9 +5,10 @@ import { ArrowRight, Check, Heart, MapPin, ShieldCheck, Sparkles, X } from 'luci
 import { Button } from '@/components/ui/button';
 
 const directions = [
-  { id: 'saffron', label: '01 Warm', note: 'Editorial & human' },
-  { id: 'lotus', label: '02 Fresh', note: 'Bright & optimistic' },
-  { id: 'indigo', label: '03 After dark', note: 'Premium & intimate' },
+  { id: 'saffron', short: 'Editorial', label: '01 Saffron Story', note: 'Warm, cultured & human', mood: 'For a trusted, relationship-first brand' },
+  { id: 'lotus', short: 'Playful', label: '02 Lotus Pop', note: 'Bright, social & optimistic', mood: 'For a younger, high-energy community' },
+  { id: 'indigo', short: 'Cinematic', label: '03 Indigo Nights', note: 'Premium, intimate & bold', mood: 'For a selective, members-club feel' },
+  { id: 'mono', short: 'Minimal', label: '04 City Minimal', note: 'Crisp, direct & modern', mood: 'For a confident, urban product' },
 ] as const;
 
 type Direction = (typeof directions)[number]['id'];
@@ -23,6 +24,15 @@ export default function Home() {
         <p className="promise"><ShieldCheck size={15} /> Curated for the Indian diaspora</p>
         <Button className="join-button" onClick={() => document.getElementById('concepts')?.scrollIntoView({ behavior: 'smooth' })}>Join thoughtfully <ArrowRight /></Button>
       </header>
+
+      <nav className="style-dock" aria-label="Choose a design direction">
+        <span>Look & feel</span>
+        {directions.map((item) => (
+          <button key={item.id} onClick={() => setDirection(item.id)} aria-pressed={direction === item.id}>
+            <i className={`dock-dot dock-${item.id}`} /> {item.short}
+          </button>
+        ))}
+      </nav>
 
       <section className="discovery" id="top">
         <div className="intro">
@@ -57,12 +67,12 @@ export default function Home() {
       </section>
 
       <section className="concepts" id="concepts">
-        <div className="concept-heading"><span className="eyebrow">Choose the feeling</span><h2>Three ways Mila could feel.</h2><p>Same thoughtful product, distinct emotional tone. Switch live to compare the full experience.</p></div>
+        <div className="concept-heading"><span className="eyebrow">Choose the feeling</span><h2>Four distinct directions.</h2><p>Not just new colors—each option changes the typography, shape language, layout, depth, and overall brand personality.</p></div>
         <div className="concept-grid">
           {directions.map((item, index) => (
             <button key={item.id} className={`concept-card ${direction === item.id ? 'active' : ''}`} onClick={() => setDirection(item.id)} aria-pressed={direction === item.id}>
-              <span className={`swatch swatch-${item.id}`}><i /><i /><i /></span>
-              <span className="concept-meta"><b>{item.label}</b><small>{item.note}</small></span>
+              <span className={`swatch swatch-${item.id}`}><i /><i /><i /><span className="mini-card" /></span>
+              <span className="concept-meta"><b>{item.label}</b><small>{item.note}</small><em>{item.mood}</em></span>
               <span className="select-indicator">{direction === item.id ? <Check /> : String(index + 1).padStart(2, '0')}</span>
             </button>
           ))}
