@@ -13,8 +13,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://mila-nri-dating.sarathnice.chatgpt.site'),
   title: 'Mila — Dating for the Indian diaspora',
   description: 'Thoughtful introductions for South Asians building a life in America.',
+  openGraph: {
+    title: 'Mila — Dating for the Indian diaspora',
+    description: 'Someone who gets both worlds. Thoughtful dating for the Indian diaspora.',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Mila — Someone who gets both worlds' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Mila — Dating for the Indian diaspora',
+    description: 'Someone who gets both worlds. Thoughtful dating for the Indian diaspora.',
+    images: ['/og.png'],
+  },
 };
 
 export default function RootLayout({
