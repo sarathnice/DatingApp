@@ -1,161 +1,125 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, BadgeCheck, CalendarHeart, Check, ChevronLeft, ChevronRight, HandHeart, Heart, LockKeyhole, MapPin, MessageCircleHeart, Route, ShieldCheck, SlidersHorizontal, Sparkles, UsersRound, X } from 'lucide-react';
+import { BadgeCheck, Bot, BriefcaseBusiness, CalendarHeart, Check, ChevronDown, Compass, Globe2, Heart, Languages, MapPin, MessageCircle, Palette, RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, Star, UserRound, UsersRound, WandSparkles, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const directions = [
-  { id: 'saffron', short: 'Editorial', label: '01 Saffron Story', note: 'Warm, cultured & human', mood: 'For a trusted, relationship-first brand' },
-  { id: 'lotus', short: 'Playful', label: '02 Lotus Pop', note: 'Bright, social & optimistic', mood: 'For a younger, high-energy community' },
-  { id: 'indigo', short: 'Cinematic', label: '03 Indigo Nights', note: 'Premium, intimate & bold', mood: 'For a selective, members-club feel' },
-  { id: 'mono', short: 'Minimal', label: '04 City Minimal', note: 'Crisp, direct & modern', mood: 'For a confident, urban product' },
+const themes = [
+  { id: 'sunrise', name: 'Sunrise', note: 'Warm & human', color: '#ef6547' },
+  { id: 'bloom', name: 'Bloom', note: 'Playful & social', color: '#8e5bdb' },
+  { id: 'midnight', name: 'Midnight', note: 'Premium & cinematic', color: '#7be4cb' },
+  { id: 'paper', name: 'Paper', note: 'Minimal & direct', color: '#d6ff4b' },
+] as const;
+type Theme = (typeof themes)[number]['id'];
+type Tab = 'discover' | 'explore' | 'likes' | 'chats' | 'you';
+
+const navigation = [
+  { id: 'discover', label: 'Discover', icon: Sparkles }, { id: 'explore', label: 'Explore', icon: Compass },
+  { id: 'likes', label: 'Likes', icon: Heart }, { id: 'chats', label: 'Chats', icon: MessageCircle },
+  { id: 'you', label: 'You', icon: UserRound },
 ] as const;
 
-type Direction = (typeof directions)[number]['id'];
-
-const differentiators = [
-  { id: 'life', icon: Route, title: 'Life Map', description: 'Match on where life is headed—not only where you live today.' },
-  { id: 'family', icon: UsersRound, title: 'Family Pace', description: 'Privately align on if, when, and how families become involved.' },
-  { id: 'culture', icon: HandHeart, title: 'Culture, in context', description: 'Share how culture shows up in your life without reducing it to a filter.' },
-  { id: 'energy', icon: CalendarHeart, title: 'Dating bandwidth', description: 'Set your real pace so promising matches do not become notification debt.' },
+const featureGroups = [
+  { label: 'Core experience', timing: 'MVP', features: [
+    ['Swipe discovery', 'Like, pass, undo and priority introduction.', Heart],
+    ['Mutual-match chat', 'Messaging opens only after both people accept.', MessageCircle],
+    ['Explore by intention', 'Serious, new in town, travel, culture and more.', Compass],
+    ['Likes & controls', 'Preferences, privacy, notifications and pause.', Settings2],
+  ]},
+  { label: 'Mila intelligence', timing: 'MVP +', features: [
+    ['Explain my match', 'Reasons based on goals, habits and values.', Sparkles],
+    ['Profile Studio', 'Photo and prompt coaching—never auto-published.', WandSparkles],
+    ['Conversation Copilot', 'Openers, tone help and translation with approval.', Bot],
+    ['Dating bandwidth', 'Choose how many active introductions feel right.', CalendarHeart],
+  ]},
+  { label: 'Trust & worldwide', timing: 'MVP', features: [
+    ['Verification & safety', 'Liveness checks, scam signals and reporting.', ShieldCheck],
+    ['Language bridge', 'Translate while preserving personality and tone.', Languages],
+    ['Global identity', 'City, roots, languages and relocation—each optional.', Globe2],
+    ['Safe date planning', 'Public places, trusted contacts and check-ins.', UsersRound],
+  ]},
 ] as const;
-
-type Feature = (typeof differentiators)[number]['id'];
 
 export default function Home() {
-  const [direction, setDirection] = useState<Direction>('saffron');
-  const [decision, setDecision] = useState<'idle' | 'passed' | 'liked'>('idle');
-  const [activeFeature, setActiveFeature] = useState<Feature>('life');
-  const [lifePlan, setLifePlan] = useState('Flexible');
-  const [familyPace, setFamilyPace] = useState('After we feel ready');
+  const [theme, setTheme] = useState<Theme>('sunrise');
+  const [activeTab, setActiveTab] = useState<Tab>('discover');
+  const [decision, setDecision] = useState<'idle' | 'liked' | 'passed' | 'intro'>('idle');
+  const [showReason, setShowReason] = useState(false);
 
-  const cycleDirection = (step: number) => {
-    const current = directions.findIndex((item) => item.id === direction);
-    setDirection(directions[(current + step + directions.length) % directions.length].id);
-  };
+  return <main className={`preview-shell theme-${theme}`}>
+    <header className="preview-header">
+      <a className="mila-brand" href="#preview"><span className="mila-mark">m</span><span>mila</span></a>
+      <div className="preview-label"><span /> Product concept · September 2026</div>
+      <Button className="feature-link" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>View feature plan <ChevronDown /></Button>
+    </header>
 
-  return (
-    <main className={`app-shell theme-${direction}`}>
-      <header className="topbar">
-        <a className="brand" href="#top" aria-label="Mila home"><span className="brand-mark">m</span><span>mila</span></a>
-        <p className="promise"><ShieldCheck size={15} /> Curated for the Indian diaspora</p>
-        <Button className="join-button" onClick={() => document.getElementById('concepts')?.scrollIntoView({ behavior: 'smooth' })}>Join thoughtfully <ArrowRight /></Button>
-      </header>
-
-      <nav className="style-dock" aria-label="Choose a design direction">
-        <button className="dock-arrow" aria-label="Previous look" onClick={() => cycleDirection(-1)}><ChevronLeft /></button>
-        <span>Look & feel</span>
-        {directions.map((item) => (
-          <button key={item.id} onClick={() => setDirection(item.id)} aria-pressed={direction === item.id}>
-            <i className={`dock-dot dock-${item.id}`} /> {item.short}
-          </button>
-        ))}
-        <button className="dock-arrow" aria-label="Next look" onClick={() => cycleDirection(1)}><ChevronRight /></button>
-      </nav>
-
-      <section className="discovery" id="top">
-        <div className="intro">
-          <span className="eyebrow"><Sparkles size={14} /> Today’s introduction</span>
-          <h1>Someone who gets<br />both <em>worlds.</em></h1>
-          <p>Intentional introductions for South Asians building a life in America—with room for where you came from and who you’re becoming.</p>
-          <div className="trust-row"><div className="avatar-stack"><span>AK</span><span>RS</span><span>NM</span></div><span>2,400+ thoughtful introductions this month</span></div>
+    <section className="preview-stage" id="preview">
+      <div className="stage-copy">
+        <span className="section-kicker"><Globe2 /> Worldwide dating, made personal</span>
+        <h1>Meet with<br /><em>more meaning.</em></h1>
+        <p>Mila keeps the familiar ease of swiping, then adds explainable compatibility, safer conversations and room for every culture.</p>
+        <div className="theme-picker">
+          <div className="picker-heading"><Palette /><span><strong>Choose your Mila</strong><small>The entire app changes instantly</small></span></div>
+          <div className="theme-options">{themes.map(item => <button key={item.id} onClick={() => setTheme(item.id)} aria-pressed={theme === item.id}><i style={{background:item.color}}/><span><b>{item.name}</b><small>{item.note}</small></span>{theme === item.id && <Check />}</button>)}</div>
         </div>
+        <div className="guardrail"><ShieldCheck /><span><strong>Consent comes first</strong>Chat unlocks only after a mutual match. AI suggests—it never speaks for you.</span></div>
+      </div>
 
-        <article className={`match-card decision-${decision}`} aria-label="Profile for Maya">
-          <div className="profile-photo" role="img" aria-label="Maya smiling outdoors in New York">
-            <div className="photo-monogram">M</div>
-            <span className="match-pill"><span /> Strong match</span>
-          </div>
-          <div className="profile-copy">
-            <div><h2>Maya <span>29</span></h2><p><MapPin size={14} /> Brooklyn, NY · Gujarati</p></div>
-            <p className="profile-quote">“Equal parts Sunday dosa, indie films, and convincing myself I’ll run the NYC marathon.”</p>
-            <div className="tags"><span>Product designer</span><span>Family-minded</span><span>NYC → Ahmedabad</span></div>
-          </div>
-          <div className="actions">
-            <Button aria-label="Pass on Maya" variant="outline" size="icon-lg" onClick={() => setDecision('passed')}><X /></Button>
-            <Button aria-label="Like Maya" className="like-button" size="lg" onClick={() => setDecision('liked')}><Heart /> {decision === 'liked' ? 'Introduction requested' : 'I’d like to meet'}</Button>
-          </div>
-          {decision !== 'idle' && <button className="undo" onClick={() => setDecision('idle')}>Undo</button>}
-        </article>
+      <div className="phone-area">
+        <div className="phone-shadow" />
+        <div className="phone-frame">
+          <div className="phone-top"><span>9:41</span><i /><div><span/><span/><span/></div></div>
+          <div className="phone-screen">
+            <div className="app-head"><span className="phone-brand"><i>m</i> mila</span><button aria-label="Search"><Search /></button><button aria-label="Settings"><Settings2 /></button></div>
+            <div className="screen-content">
+              {activeTab === 'discover' && <div className="discover-screen">
+                <div className="discovery-title"><span>For you</span><button>New York <ChevronDown /></button></div>
+                <article className={`profile-card card-${decision}`}>
+                  <div className="profile-image">
+                    <div className="story-dots"><i/><i/><i/><i/></div><span className="verified-pill"><BadgeCheck /> Verified</span>
+                    {decision !== 'idle' && <div className="decision-stamp">{decision === 'passed' ? 'Maybe later' : decision === 'intro' ? 'Intro sent' : 'Liked'}</div>}
+                    <div className="profile-gradient"/><div className="profile-details">
+                      <div className="name-line"><h2>Maya, 29</h2><BadgeCheck /></div>
+                      <p><BriefcaseBusiness /> Product designer</p><p><MapPin /> Brooklyn · 3 miles away</p>
+                      <div className="profile-tags"><span>Long-term</span><span>Indie films</span><span>Gujarati + English</span></div>
+                    </div>
+                  </div>
+                  <button className="match-reason" onClick={() => setShowReason(!showReason)}><span><Sparkles /><b>Why Mila picked Maya</b></span><ChevronDown /></button>
+                  {showReason && <div className="reason-panel"><span><Check /> Same relationship goal</span><span><Check /> Similar social energy</span><span><Check /> Both open to relocating</span></div>}
+                </article>
+                <div className="swipe-actions"><button aria-label="Pass" onClick={() => setDecision('passed')}><X /></button><button aria-label="Undo" onClick={() => setDecision('idle')}><RotateCcw /></button><button className="priority" aria-label="Meaningful intro" onClick={() => setDecision('intro')}><Star /></button><button className="like" aria-label="Like" onClick={() => setDecision('liked')}><Heart /></button></div>
+                <div className="swipe-hint"><span>Swipe left to pass</span><span>Swipe right to like</span></div>
+              </div>}
 
-        <aside className="compatibility">
-          <span className="compat-number">88</span><span className="compat-percent">%</span><strong>Compatibility</strong>
-          <div><span><Check /> Shared values</span><span><Check /> Same city</span><span><Check /> Similar pace</span></div>
-          <p>Based on what matters to both of you—not endless swiping.</p>
-        </aside>
-      </section>
+              {activeTab === 'explore' && <div className="inner-screen"><span className="screen-kicker">Explore</span><h2>Date with intention.</h2><p>Choose a space that matches what you want today.</p><div className="explore-grid">
+                <button className="wide"><Heart /><span><b>Ready for real</b><small>Long-term connections</small></span></button>
+                <button><MapPin /><span><b>New in town</b><small>Meet nearby</small></span></button><button><Globe2 /><span><b>Across borders</b><small>Open to distance</small></span></button>
+                <button><Zap /><span><b>Free tonight</b><small>Spontaneous plans</small></span></button><button><UsersRound /><span><b>Culture & roots</b><small>Share your world</small></span></button>
+              </div></div>}
 
-      <section className="market-gap" id="difference">
-        <div className="gap-heading">
-          <span className="eyebrow">Beyond the swipe</span>
-          <h2>The questions that matter<br />after <em>“we matched.”</em></h2>
-          <p>Popular apps are good at attraction and introductions. Mila adds a private alignment layer for the realities of building a bicultural life.</p>
-          <div className="foundation-list">
-            <span><BadgeCheck /> Identity verification</span>
-            <span><MessageCircleHeart /> Prompt-led messages</span>
-            <span><ShieldCheck /> Share-a-date safety</span>
-          </div>
-        </div>
+              {activeTab === 'likes' && <div className="inner-screen"><span className="screen-kicker">Likes you</span><h2>Three people noticed you.</h2><p>Profiles stay private until you choose to look.</p><div className="likes-grid"><div/><div/><div/><div/></div><button className="primary-cta">See who likes you <Heart /></button></div>}
 
-        <div className="alignment-lab">
-          <div className="lab-topline"><span><LockKeyhole /> Visible only to mutual matches</span><strong>Mila alignment</strong></div>
-          <div className="feature-tabs" role="tablist" aria-label="Explore Mila features">
-            {differentiators.map((item) => {
-              const Icon = item.icon;
-              return <button key={item.id} role="tab" aria-label={item.title} aria-selected={activeFeature === item.id} onClick={() => setActiveFeature(item.id)}><Icon /><span>{item.title}</span></button>;
-            })}
-          </div>
+              {activeTab === 'chats' && <div className="inner-screen"><span className="screen-kicker">Messages</span><h2>Good conversations.</h2><div className="new-matches"><span className="mini-avatar">M</span><span className="mini-avatar alt">A</span><button><Heart /> New match</button></div>
+                <div className="chat-row"><span className="chat-avatar">M</span><div><b>Maya <BadgeCheck /></b><small>That bookstore sounds perfect!</small></div><time>2m</time></div>
+                <div className="chat-row"><span className="chat-avatar blue">A</span><div><b>Alex</b><small>You: How was Lisbon?</small></div><time>1h</time></div>
+                <div className="copilot-card"><Bot /><div><b>Conversation Copilot</b><span>Ask Mila for an opener based on your shared interests.</span></div><button aria-label="Try copilot"><Send /></button></div>
+              </div>}
 
-          <div className="lab-panel" role="tabpanel">
-            {activeFeature === 'life' && <>
-              <span className="panel-kicker">01 · Future geography</span>
-              <h3>Where could home be in 3 years?</h3>
-              <p>Compare possibilities without treating today’s ZIP code as destiny.</p>
-              <div className="option-row">{['USA', 'India', 'Flexible'].map((item) => <Button key={item} variant={lifePlan === item ? 'default' : 'outline'} onClick={() => setLifePlan(item)}>{item}</Button>)}</div>
-              <div className="shared-signal"><Route /><div><strong>You both chose {lifePlan}</strong><span>Maya is also open to New York, Austin, or Bengaluru.</span></div><Check /></div>
-            </>}
-            {activeFeature === 'family' && <>
-              <span className="panel-kicker">02 · Family involvement</span>
-              <h3>When should family enter the story?</h3>
-              <p>Your answer stays private until there is a mutual match.</p>
-              <div className="choice-stack">{['Early—I value their perspective', 'After we feel ready', 'Much later—keep it between us'].map((item) => <button key={item} aria-pressed={familyPace === item} onClick={() => setFamilyPace(item)}><span />{item}{familyPace === item && <Check />}</button>)}</div>
-            </>}
-            {activeFeature === 'culture' && <>
-              <span className="panel-kicker">03 · Cultural rhythm</span>
-              <h3>Describe it. Don’t checkbox it.</h3>
-              <p>Mila replaces rigid community filters with lived, optional context.</p>
-              <blockquote>“I speak Telugu with my parents, celebrate the big holidays, and want a partner who’s curious—not necessarily identical.”</blockquote>
-              <div className="context-tags"><span>Languages at home</span><span>Traditions I keep</span><span>What I’m reimagining</span></div>
-            </>}
-            {activeFeature === 'energy' && <>
-              <span className="panel-kicker">04 · Intentional pacing</span>
-              <h3>How much space do you have for dating?</h3>
-              <p>Mila limits active introductions to match your capacity—without hiding your profile.</p>
-              <div className="capacity"><SlidersHorizontal /><div><strong>2 active introductions</strong><span>One thoughtful match every Thursday</span></div><b>Balanced</b></div>
-              <div className="capacity-track"><i /></div>
-            </>}
-          </div>
-        </div>
-      </section>
+              {activeTab === 'you' && <div className="inner-screen you-screen"><span className="screen-kicker">Your Mila</span><h2>Make it feel like you.</h2><p>Your appearance preference stays on this device.</p>
+                <div className="profile-summary"><div className="you-avatar">S</div><span><b>Your profile</b><small>82% complete · Verified</small></span><button>Edit</button></div><h3>Appearance</h3>
+                <div className="in-app-themes">{themes.map(item => <button key={item.id} onClick={() => setTheme(item.id)} aria-pressed={theme === item.id}><i style={{background:item.color}}/>{item.name}{theme === item.id && <Check />}</button>)}</div>
+                <div className="setting-row"><Languages /><span><b>Languages</b><small>English + 2 more</small></span><ChevronDown /></div><div className="setting-row"><ShieldCheck /><span><b>Safety center</b><small>Verification and privacy</small></span><ChevronDown /></div>
+              </div>}
+            </div>
+            <nav className="bottom-nav">{navigation.map(item => {const Icon=item.icon;return <button key={item.id} onClick={() => setActiveTab(item.id)} aria-current={activeTab===item.id?'page':undefined}><Icon/><span>{item.label}</span>{item.id==='chats'&&<i>2</i>}</button>})}</nav>
+          </div><div className="home-indicator"/>
+        </div><p className="try-note"><span /> Live preview—try the tabs, themes and profile actions</p>
+      </div>
+    </section>
 
-      <section className="principles">
-        <div><span>01</span><strong>Explain the match</strong><p>Show shared values and meaningful differences, not a mysterious score.</p></div>
-        <div><span>02</span><strong>Consent before context</strong><p>Sensitive family and future answers unlock only after mutual interest.</p></div>
-        <div><span>03</span><strong>Quality over queue</strong><p>Fewer active introductions, clearer closure, and no endless swipe pressure.</p></div>
-      </section>
-
-      <section className="concepts" id="concepts">
-        <div className="concept-heading"><span className="eyebrow">Choose the feeling</span><h2>Four distinct directions.</h2><p>Not just new colors—each option changes the typography, shape language, layout, depth, and overall brand personality.</p></div>
-        <div className="concept-grid">
-          {directions.map((item, index) => (
-            <button key={item.id} className={`concept-card ${direction === item.id ? 'active' : ''}`} onClick={() => setDirection(item.id)} aria-pressed={direction === item.id}>
-              <span className={`swatch swatch-${item.id}`}><i /><i /><i /><span className="mini-card" /></span>
-              <span className="concept-meta"><b>{item.label}</b><small>{item.note}</small><em>{item.mood}</em></span>
-              <span className="select-indicator">{direction === item.id ? <Check /> : String(index + 1).padStart(2, '0')}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-    </main>
-  );
+    <section className="feature-plan" id="features"><div className="plan-heading"><span className="section-kicker"><Sparkles /> Proposed product scope</span><h2>Everything Mila should do—<br/><em>in the right order.</em></h2><p>The first release creates a complete dating loop. Advanced AI strengthens compatibility and confidence without replacing human judgment.</p></div>
+      <div className="feature-groups">{featureGroups.map(group => <article key={group.label} className="feature-group"><header><span>{group.label}</span><b>{group.timing}</b></header>{group.features.map(([title,description,Icon]) => <div className="feature-row" key={title as string}><i><Icon/></i><span><strong>{title as string}</strong><small>{description as string}</small></span><Check/></div>)}</article>)}</div>
+    </section>
+    <section className="product-rules"><div><span>01</span><strong>Familiar first</strong><p>Swiping, likes and chat remain easy to understand anywhere in the world.</p></div><div><span>02</span><strong>AI with permission</strong><p>Every suggestion is visible, explainable and controlled by the member.</p></div><div><span>03</span><strong>Safety is free</strong><p>Verification, blocking, reporting and essential protections never require payment.</p></div></section>
+  </main>;
 }
