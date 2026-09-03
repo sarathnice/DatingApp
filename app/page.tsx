@@ -432,7 +432,7 @@ function MobileScreen({
                             className="view-profile"
                             onClick={() => onProfileOpen(true)}
                           >
-                      See full profile <ChevronDown />
+                      Get to know Maya <ChevronDown />
                           </button>
                         </div>
                       </div>
