@@ -30,6 +30,7 @@ import {
   Search,
   Send,
   Settings2,
+  Share2,
   ShieldCheck,
   Sparkles,
   Star,
@@ -242,6 +243,8 @@ function MobileScreen({
   const dragStart = useRef<number | null>(null);
   const [dragX, setDragX] = useState(0);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [profileNotice, setProfileNotice] = useState("");
+  const [videoPlaying, setVideoPlaying] = useState(false);
   const [birthDate, setBirthDate] = useState("1994-10-08");
   const [gender, setGender] = useState("Non-binary");
   const [showGender, setShowGender] = useState(true);
@@ -284,6 +287,19 @@ function MobileScreen({
   };
   const cycleRadius = () =>
     onRadius(radius === 5 ? 10 : radius === 10 ? 25 : 5);
+  const shareProfile = () => {
+    setProfileNotice("Maya’s profile link is ready to share");
+    onSafetyOpen(false);
+  };
+  const reportProfile = () => {
+    setProfileNotice("Report options opened — Maya is not notified");
+    onSafetyOpen(false);
+  };
+  const blockProfile = () => {
+    onBlocked(true);
+    onProfileOpen(false);
+    onSafetyOpen(false);
+  };
   return (
     <div className={`device-column ${platform}`}>
       <div className="device-caption">
@@ -668,16 +684,13 @@ function MobileScreen({
                 </button>
                 {safetyOpen && (
                   <div className="safety-menu">
-                    <button
-                      onClick={() => {
-                        onBlocked(true);
-                        onProfileOpen(false);
-                        onSafetyOpen(false);
-                      }}
-                    >
+                    <button onClick={shareProfile}>
+                      <Share2 /> Share profile
+                    </button>
+                    <button onClick={blockProfile}>
                       <Ban /> Block Maya
                     </button>
-                    <button>
+                    <button onClick={reportProfile}>
                       <Flag /> Report profile
                     </button>
                     <button onClick={() => onSafetyOpen(false)}>Cancel</button>
@@ -685,23 +698,36 @@ function MobileScreen({
                 )}
                 <button
                   className="full-media-prev"
-                  onClick={() => onMediaIndex((mediaIndex + 3) % 4)}
+                  onClick={() => {
+                    onMediaIndex((mediaIndex + 3) % 4);
+                    setVideoPlaying(false);
+                  }}
                   aria-label="Previous media"
                 >
                   <ArrowLeft />
                 </button>
                 <button
                   className="full-media-next"
-                  onClick={() => onMediaIndex((mediaIndex + 1) % 4)}
+                  onClick={() => {
+                    onMediaIndex((mediaIndex + 1) % 4);
+                    setVideoPlaying(false);
+                  }}
                   aria-label="Next media"
                 >
                   <ArrowLeft />
                 </button>
                 {mediaIndex === 3 && (
-                  <span className="full-video">
-                    <Play /> Play video prompt
-                  </span>
+                  <button
+                    className={`full-video ${videoPlaying ? "is-playing" : ""}`}
+                    onClick={() => setVideoPlaying(!videoPlaying)}
+                  >
+                    <Play />
+                    {videoPlaying ? "Playing · 0:08 / 0:12" : "Play video prompt"}
+                  </button>
                 )}
+                <span className="media-count">
+                  {mediaIndex === 3 ? "Video" : `Photo ${mediaIndex + 1}`} · {mediaIndex + 1}/4
+                </span>
                 <div className="profile-gradient" />
                 <div className="full-name">
                   <h2>Maya, 29</h2>
@@ -711,18 +737,26 @@ function MobileScreen({
                   </p>
                 </div>
               </div>
-              <div className="media-thumbs">
+              <div className="media-thumbs" aria-label="All photos and video">
                 {[0, 1, 2, 3].map((i) => (
                   <button
                     key={i}
                     className={`media-${i} ${mediaIndex === i ? "active" : ""}`}
-                    onClick={() => onMediaIndex(i)}
+                    onClick={() => {
+                      onMediaIndex(i);
+                      setVideoPlaying(false);
+                    }}
                     aria-label={i === 3 ? "Video prompt" : `Photo ${i + 1}`}
                   >
                     {i === 3 && <Play />}
                   </button>
                 ))}
               </div>
+              {profileNotice && (
+                <div className="profile-notice" role="status">
+                  <Check /> {profileNotice}
+                </div>
+              )}
               <div className="full-profile-copy">
                 <span className="intent-pill">
                   <Heart /> Looking for a long-term relationship
@@ -744,6 +778,17 @@ function MobileScreen({
                   <span>Open to relocate</span>
                   <span>Family-minded</span>
                 </div>
+              </div>
+              <div className="profile-safety-actions">
+                <button onClick={shareProfile}>
+                  <Share2 /> Share
+                </button>
+                <button onClick={blockProfile}>
+                  <Ban /> Block
+                </button>
+                <button onClick={reportProfile}>
+                  <Flag /> Report
+                </button>
               </div>
               <div className="full-actions">
                 <button onClick={() => onProfileOpen(false)}>
