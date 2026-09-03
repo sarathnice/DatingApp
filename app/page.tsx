@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Check, Heart, MapPin, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, BadgeCheck, CalendarHeart, Check, ChevronLeft, ChevronRight, HandHeart, Heart, LockKeyhole, MapPin, MessageCircleHeart, Route, ShieldCheck, SlidersHorizontal, Sparkles, UsersRound, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const directions = [
@@ -13,9 +13,26 @@ const directions = [
 
 type Direction = (typeof directions)[number]['id'];
 
+const differentiators = [
+  { id: 'life', icon: Route, title: 'Life Map', description: 'Match on where life is headed—not only where you live today.' },
+  { id: 'family', icon: UsersRound, title: 'Family Pace', description: 'Privately align on if, when, and how families become involved.' },
+  { id: 'culture', icon: HandHeart, title: 'Culture, in context', description: 'Share how culture shows up in your life without reducing it to a filter.' },
+  { id: 'energy', icon: CalendarHeart, title: 'Dating bandwidth', description: 'Set your real pace so promising matches do not become notification debt.' },
+] as const;
+
+type Feature = (typeof differentiators)[number]['id'];
+
 export default function Home() {
   const [direction, setDirection] = useState<Direction>('saffron');
   const [decision, setDecision] = useState<'idle' | 'passed' | 'liked'>('idle');
+  const [activeFeature, setActiveFeature] = useState<Feature>('life');
+  const [lifePlan, setLifePlan] = useState('Flexible');
+  const [familyPace, setFamilyPace] = useState('After we feel ready');
+
+  const cycleDirection = (step: number) => {
+    const current = directions.findIndex((item) => item.id === direction);
+    setDirection(directions[(current + step + directions.length) % directions.length].id);
+  };
 
   return (
     <main className={`app-shell theme-${direction}`}>
@@ -26,12 +43,14 @@ export default function Home() {
       </header>
 
       <nav className="style-dock" aria-label="Choose a design direction">
+        <button className="dock-arrow" aria-label="Previous look" onClick={() => cycleDirection(-1)}><ChevronLeft /></button>
         <span>Look & feel</span>
         {directions.map((item) => (
           <button key={item.id} onClick={() => setDirection(item.id)} aria-pressed={direction === item.id}>
             <i className={`dock-dot dock-${item.id}`} /> {item.short}
           </button>
         ))}
+        <button className="dock-arrow" aria-label="Next look" onClick={() => cycleDirection(1)}><ChevronRight /></button>
       </nav>
 
       <section className="discovery" id="top">
@@ -64,6 +83,65 @@ export default function Home() {
           <div><span><Check /> Shared values</span><span><Check /> Same city</span><span><Check /> Similar pace</span></div>
           <p>Based on what matters to both of you—not endless swiping.</p>
         </aside>
+      </section>
+
+      <section className="market-gap" id="difference">
+        <div className="gap-heading">
+          <span className="eyebrow">Beyond the swipe</span>
+          <h2>The questions that matter<br />after <em>“we matched.”</em></h2>
+          <p>Popular apps are good at attraction and introductions. Mila adds a private alignment layer for the realities of building a bicultural life.</p>
+          <div className="foundation-list">
+            <span><BadgeCheck /> Identity verification</span>
+            <span><MessageCircleHeart /> Prompt-led messages</span>
+            <span><ShieldCheck /> Share-a-date safety</span>
+          </div>
+        </div>
+
+        <div className="alignment-lab">
+          <div className="lab-topline"><span><LockKeyhole /> Visible only to mutual matches</span><strong>Mila alignment</strong></div>
+          <div className="feature-tabs" role="tablist" aria-label="Explore Mila features">
+            {differentiators.map((item) => {
+              const Icon = item.icon;
+              return <button key={item.id} role="tab" aria-label={item.title} aria-selected={activeFeature === item.id} onClick={() => setActiveFeature(item.id)}><Icon /><span>{item.title}</span></button>;
+            })}
+          </div>
+
+          <div className="lab-panel" role="tabpanel">
+            {activeFeature === 'life' && <>
+              <span className="panel-kicker">01 · Future geography</span>
+              <h3>Where could home be in 3 years?</h3>
+              <p>Compare possibilities without treating today’s ZIP code as destiny.</p>
+              <div className="option-row">{['USA', 'India', 'Flexible'].map((item) => <Button key={item} variant={lifePlan === item ? 'default' : 'outline'} onClick={() => setLifePlan(item)}>{item}</Button>)}</div>
+              <div className="shared-signal"><Route /><div><strong>You both chose {lifePlan}</strong><span>Maya is also open to New York, Austin, or Bengaluru.</span></div><Check /></div>
+            </>}
+            {activeFeature === 'family' && <>
+              <span className="panel-kicker">02 · Family involvement</span>
+              <h3>When should family enter the story?</h3>
+              <p>Your answer stays private until there is a mutual match.</p>
+              <div className="choice-stack">{['Early—I value their perspective', 'After we feel ready', 'Much later—keep it between us'].map((item) => <button key={item} aria-pressed={familyPace === item} onClick={() => setFamilyPace(item)}><span />{item}{familyPace === item && <Check />}</button>)}</div>
+            </>}
+            {activeFeature === 'culture' && <>
+              <span className="panel-kicker">03 · Cultural rhythm</span>
+              <h3>Describe it. Don’t checkbox it.</h3>
+              <p>Mila replaces rigid community filters with lived, optional context.</p>
+              <blockquote>“I speak Telugu with my parents, celebrate the big holidays, and want a partner who’s curious—not necessarily identical.”</blockquote>
+              <div className="context-tags"><span>Languages at home</span><span>Traditions I keep</span><span>What I’m reimagining</span></div>
+            </>}
+            {activeFeature === 'energy' && <>
+              <span className="panel-kicker">04 · Intentional pacing</span>
+              <h3>How much space do you have for dating?</h3>
+              <p>Mila limits active introductions to match your capacity—without hiding your profile.</p>
+              <div className="capacity"><SlidersHorizontal /><div><strong>2 active introductions</strong><span>One thoughtful match every Thursday</span></div><b>Balanced</b></div>
+              <div className="capacity-track"><i /></div>
+            </>}
+          </div>
+        </div>
+      </section>
+
+      <section className="principles">
+        <div><span>01</span><strong>Explain the match</strong><p>Show shared values and meaningful differences, not a mysterious score.</p></div>
+        <div><span>02</span><strong>Consent before context</strong><p>Sensitive family and future answers unlock only after mutual interest.</p></div>
+        <div><span>03</span><strong>Quality over queue</strong><p>Fewer active introductions, clearer closure, and no endless swipe pressure.</p></div>
       </section>
 
       <section className="concepts" id="concepts">
