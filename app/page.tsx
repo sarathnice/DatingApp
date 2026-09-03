@@ -432,7 +432,7 @@ function MobileScreen({
                             className="view-profile"
                             onClick={() => onProfileOpen(true)}
                           >
-                            View all 3 photos + video <ChevronDown />
+                      See full profile <ChevronDown />
                           </button>
                         </div>
                       </div>
