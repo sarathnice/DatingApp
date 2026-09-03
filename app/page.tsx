@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   BadgeCheck,
   Ban,
+  Bookmark,
   Bot,
   BriefcaseBusiness,
   CakeSlice,
@@ -245,6 +246,10 @@ function MobileScreen({
   const [editorOpen, setEditorOpen] = useState(false);
   const [profileNotice, setProfileNotice] = useState("");
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const [likesView, setLikesView] = useState<
+    "incoming" | "sent" | "favorites"
+  >("incoming");
+  const [mayaFavorite, setMayaFavorite] = useState(true);
   const [birthDate, setBirthDate] = useState("1994-10-08");
   const [gender, setGender] = useState("Non-binary");
   const [showGender, setShowGender] = useState(true);
@@ -539,19 +544,113 @@ function MobileScreen({
               </div>
             )}
             {activeTab === "likes" && (
-              <div className="inner-screen">
-                <span className="screen-kicker">Likes you</span>
-                <h2>Three people noticed you.</h2>
-                <p>Profiles stay private until you choose to look.</p>
-                <div className="likes-grid">
-                  <div />
-                  <div />
-                  <div />
-                  <div />
+              <div className="inner-screen likes-screen">
+                <span className="screen-kicker">Connections</span>
+                <h2>Your likes, clearly.</h2>
+                <p>See incoming likes, likes you sent, and private favorites.</p>
+                <div className="likes-tabs" aria-label="Likes views">
+                  <button
+                    onClick={() => setLikesView("incoming")}
+                    aria-pressed={likesView === "incoming"}
+                  >
+                    Liked you <i>3</i>
+                  </button>
+                  <button
+                    onClick={() => setLikesView("sent")}
+                    aria-pressed={likesView === "sent"}
+                  >
+                    You liked <i>{decision === "liked" ? 2 : 1}</i>
+                  </button>
+                  <button
+                    onClick={() => setLikesView("favorites")}
+                    aria-pressed={likesView === "favorites"}
+                  >
+                    Favorites <i>{mayaFavorite ? 1 : 0}</i>
+                  </button>
                 </div>
-                <button className="primary-cta">
-                  See who likes you <Heart />
-                </button>
+                {likesView === "incoming" && (
+                  <div className="likes-list">
+                    {[
+                      ["P", "Priya, 31", "Queens · 6 mi", "New"],
+                      ["D", "Daniel, 30", "Manhattan · 4 mi", "Today"],
+                      ["E", "Elena, 28", "Jersey City · 8 mi", "Yesterday"],
+                    ].map(([initial, name, meta, time], index) => (
+                      <button className="like-person" key={name}>
+                        <span className={`like-avatar tone-${index}`}>{initial}</span>
+                        <span>
+                          <b>{name}</b>
+                          <small>{meta}</small>
+                        </span>
+                        <em>{time}</em>
+                      </button>
+                    ))}
+                    <small className="likes-note">
+                      Like someone back to create a match and start chatting.
+                    </small>
+                  </div>
+                )}
+                {likesView === "sent" && (
+                  <div className="likes-list">
+                    {decision === "liked" && (
+                      <div className="like-person">
+                        <span className="like-avatar maya-mini">M</span>
+                        <span>
+                          <b>Maya, 29</b>
+                          <small>Liked just now · Awaiting response</small>
+                        </span>
+                        <button
+                          className="save-person"
+                          onClick={() => setMayaFavorite(!mayaFavorite)}
+                          aria-label={mayaFavorite ? "Remove Maya from favorites" : "Save Maya to favorites"}
+                        >
+                          <Bookmark fill={mayaFavorite ? "currentColor" : "none"} />
+                        </button>
+                      </div>
+                    )}
+                    <div className="like-person">
+                      <span className="like-avatar tone-1">J</span>
+                      <span>
+                        <b>Jordan, 32</b>
+                        <small>Liked yesterday · Awaiting response</small>
+                      </span>
+                      <button className="save-person" aria-label="Save Jordan to favorites">
+                        <Bookmark />
+                      </button>
+                    </div>
+                    <small className="likes-note">
+                      Sent likes can become chats only when the other person likes you back.
+                    </small>
+                  </div>
+                )}
+                {likesView === "favorites" && (
+                  <div className="likes-list">
+                    {mayaFavorite ? (
+                      <div className="like-person">
+                        <span className="like-avatar maya-mini">M</span>
+                        <span>
+                          <b>Maya, 29</b>
+                          <small>Saved privately · Brooklyn</small>
+                        </span>
+                        <button
+                          className="save-person"
+                          onClick={() => setMayaFavorite(false)}
+                          aria-label="Remove Maya from favorites"
+                        >
+                          <Bookmark fill="currentColor" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="likes-empty">
+                        <Bookmark />
+                        <b>No favorites yet</b>
+                        <small>Save profiles you want to revisit. They will not be notified.</small>
+                      </div>
+                    )}
+                    <small className="likes-note">
+                      Favorites are visible only to you and do not send a like.
+                    </small>
+                  </div>
+                )}
               </div>
             )}
             {activeTab === "chats" && (
@@ -758,9 +857,19 @@ function MobileScreen({
                 </div>
               )}
               <div className="full-profile-copy">
-                <span className="intent-pill">
-                  <Heart /> Looking for a long-term relationship
-                </span>
+                <div className="profile-intent-row">
+                  <span className="intent-pill">
+                    <Heart /> Looking for a long-term relationship
+                  </span>
+                  <button
+                    className="favorite-toggle"
+                    onClick={() => setMayaFavorite(!mayaFavorite)}
+                    aria-pressed={mayaFavorite}
+                  >
+                    <Bookmark fill={mayaFavorite ? "currentColor" : "none"} />
+                    {mayaFavorite ? "Saved" : "Favorite"}
+                  </button>
+                </div>
                 <h3>About Maya</h3>
                 <p>
                   Product designer, amateur film photographer and a firm
