@@ -63,6 +63,45 @@ const themes = [
 type Theme = (typeof themes)[number]["id"];
 type Tab = "discover" | "explore" | "likes" | "chats" | "you";
 type Platform = "ios" | "android";
+type DemoProfile = {
+  id: "maya" | "arjun";
+  name: string;
+  age: number;
+  job: string;
+  city: string;
+  distance: number;
+  languages: string[];
+  tags: string[];
+  about: string;
+  prompt: string;
+};
+
+const demoProfiles: Record<DemoProfile["id"], DemoProfile> = {
+  maya: {
+    id: "maya",
+    name: "Maya",
+    age: 29,
+    job: "Product designer",
+    city: "Brooklyn",
+    distance: 3,
+    languages: ["English", "Gujarati"],
+    tags: ["Indie films", "Family-minded"],
+    about: "Product designer, amateur film photographer and a firm believer that the best weekends begin without an itinerary.",
+    prompt: "I make excellent dosa, know every indie cinema in Brooklyn, and think window seats are overrated.",
+  },
+  arjun: {
+    id: "arjun",
+    name: "Arjun",
+    age: 31,
+    job: "Climate-tech engineer",
+    city: "Brooklyn",
+    distance: 4,
+    languages: ["English", "Hindi"],
+    tags: ["Weekend hikes", "Home cooking"],
+    about: "Climate-tech engineer, weekend trail hunter and enthusiastic host of small dinner parties with very ambitious menus.",
+    prompt: "I can fix a bike, make a memorable biryani, and will always choose the scenic route.",
+  },
+};
 
 const interestOptions = [
   "Travel",
@@ -198,6 +237,10 @@ const featureGroups = [
 
 function MobileScreen({
   platform,
+  viewerName,
+  profile,
+  matched,
+  targetLikedYou,
   activeTab,
   onTab,
   theme,
@@ -220,6 +263,10 @@ function MobileScreen({
   onRadius,
 }: {
   platform: Platform;
+  viewerName: string;
+  profile: DemoProfile;
+  matched: boolean;
+  targetLikedYou: boolean;
   activeTab: Tab;
   onTab: (tab: Tab) => void;
   theme: Theme;
@@ -293,11 +340,11 @@ function MobileScreen({
   const cycleRadius = () =>
     onRadius(radius === 5 ? 10 : radius === 10 ? 25 : 5);
   const shareProfile = () => {
-    setProfileNotice("Maya’s profile link is ready to share");
+    setProfileNotice(`${profile.name}’s profile link is ready to share`);
     onSafetyOpen(false);
   };
   const reportProfile = () => {
-    setProfileNotice("Report options opened — Maya is not notified");
+    setProfileNotice(`Report options opened — ${profile.name} is not notified`);
     onSafetyOpen(false);
   };
   const blockProfile = () => {
@@ -307,13 +354,11 @@ function MobileScreen({
   };
   return (
     <div className={`device-column ${platform}`}>
-      <div className="device-caption">
-        <span>{platform === "ios" ? "iOS" : "Android"}</span>
-        <small>
-          {platform === "ios"
-            ? "iPhone 16 · Native layout"
-            : "Pixel 10 · Material layout"}
-        </small>
+    <div className="device-caption">
+      <span>{viewerName}’s view</span>
+      <small>
+        {platform === "ios" ? "iPhone · viewing Maya" : "Android · viewing Arjun"}
+      </small>
       </div>
       <div className={`phone-frame compare-phone ${platform}`}>
         <div className="phone-top">
@@ -353,13 +398,13 @@ function MobileScreen({
                     <span>
                       <Ban />
                     </span>
-                    <h3>Maya is blocked</h3>
+                    <h3>{profile.name} is blocked</h3>
                     <p>You will not see each other or be able to message.</p>
                     <button onClick={() => onBlocked(false)}>Undo block</button>
                   </div>
                 ) : (
                   <>
-                    <article
+                  <article
                       className={`profile-card card-${decision} ${dragX !== 0 ? "is-dragging" : ""}`}
                       style={
                         dragX
@@ -380,7 +425,7 @@ function MobileScreen({
                       onPointerUp={finishSwipe}
                       onPointerCancel={finishSwipe}
                     >
-                      <div className={`profile-image media-${mediaIndex}`}>
+                    <div className={`profile-image profile-${profile.id} media-${mediaIndex}`}>
                         <div className="story-dots">
                           {[0, 1, 2, 3].map((i) => (
                             <i
@@ -419,32 +464,32 @@ function MobileScreen({
                         <div className="profile-gradient" />
                         <div className="profile-details">
                           <div className="name-line">
-                            <h2>Maya, 29</h2>
+                            <h2>{profile.name}, {profile.age}</h2>
                             <BadgeCheck />
                           </div>
                           <p>
-                            <BriefcaseBusiness /> Product designer
+                            <BriefcaseBusiness /> {profile.job}
                           </p>
                           <p>
-                            <MapPin /> Brooklyn · 3 miles away
+                            <MapPin /> {profile.city} · {profile.distance} miles away
                           </p>
                           <div className="profile-tags">
                             <span>Long-term</span>
-                            <span>Indie films</span>
-                            <span>Gujarati + English</span>
+                            <span>{profile.tags[0]}</span>
+                            <span>{profile.languages.join(" + ")}</span>
                           </div>
                           <button
                             className="view-profile"
                             onClick={() => onProfileOpen(true)}
                           >
-                      Get to know Maya <ChevronDown />
+                      Get to know {profile.name} <ChevronDown />
                           </button>
                         </div>
                       </div>
                       <button className="match-reason" onClick={onReason}>
                         <span>
                           <Sparkles />
-                          <b>Why Mila picked Maya</b>
+                          <b>Why Mila picked {profile.name}</b>
                         </span>
                         <ChevronDown />
                       </button>
@@ -496,6 +541,17 @@ function MobileScreen({
                       <span>Like</span>
                     </div>
                   </>
+                )}
+                {matched && (
+                  <div className="match-moment">
+                    <span className={`match-photo profile-${profile.id}`} />
+                    <Sparkles />
+                    <h3>It’s a match!</h3>
+                    <p>{viewerName} and {profile.name} liked each other. Chat is now open.</p>
+                    <button onClick={() => onTab("chats")}>
+                      Say hello <MessageCircle />
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -553,7 +609,7 @@ function MobileScreen({
                     onClick={() => setLikesView("incoming")}
                     aria-pressed={likesView === "incoming"}
                   >
-                    Liked you <i>3</i>
+                    Liked you <i>{targetLikedYou ? 4 : 3}</i>
                   </button>
                   <button
                     onClick={() => setLikesView("sent")}
@@ -570,6 +626,16 @@ function MobileScreen({
                 </div>
                 {likesView === "incoming" && (
                   <div className="likes-list">
+                    {targetLikedYou && (
+                      <button className="like-person incoming-target">
+                        <span className={`like-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
+                        <span>
+                          <b>{profile.name}, {profile.age}</b>
+                          <small>{matched ? "It’s a match — chat is open" : "Liked you just now"}</small>
+                        </span>
+                        <em>{matched ? "Matched" : "New"}</em>
+                      </button>
+                    )}
                     {[
                       ["P", "Priya, 31", "Queens · 6 mi", "New"],
                       ["D", "Daniel, 30", "Manhattan · 4 mi", "Today"],
@@ -593,15 +659,15 @@ function MobileScreen({
                   <div className="likes-list">
                     {decision === "liked" && (
                       <div className="like-person">
-                        <span className="like-avatar maya-mini">M</span>
+                        <span className={`like-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
                         <span>
-                          <b>Maya, 29</b>
+                          <b>{profile.name}, {profile.age}</b>
                           <small>Liked just now · Awaiting response</small>
                         </span>
                         <button
                           className="save-person"
                           onClick={() => setMayaFavorite(!mayaFavorite)}
-                          aria-label={mayaFavorite ? "Remove Maya from favorites" : "Save Maya to favorites"}
+                          aria-label={mayaFavorite ? `Remove ${profile.name} from favorites` : `Save ${profile.name} to favorites`}
                         >
                           <Bookmark fill={mayaFavorite ? "currentColor" : "none"} />
                         </button>
@@ -626,15 +692,15 @@ function MobileScreen({
                   <div className="likes-list">
                     {mayaFavorite ? (
                       <div className="like-person">
-                        <span className="like-avatar maya-mini">M</span>
+                        <span className={`like-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
                         <span>
-                          <b>Maya, 29</b>
-                          <small>Saved privately · Brooklyn</small>
+                          <b>{profile.name}, {profile.age}</b>
+                          <small>Saved privately · {profile.city}</small>
                         </span>
                         <button
                           className="save-person"
                           onClick={() => setMayaFavorite(false)}
-                          aria-label="Remove Maya from favorites"
+                          aria-label={`Remove ${profile.name} from favorites`}
                         >
                           <Bookmark fill="currentColor" />
                         </button>
@@ -658,22 +724,29 @@ function MobileScreen({
                 <span className="screen-kicker">Messages</span>
                 <h2>Good conversations.</h2>
                 <div className="new-matches">
-                  <span className="mini-avatar">M</span>
+                  <span className={`mini-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
                   <span className="mini-avatar alt">A</span>
                   <button>
                     <Heart /> New match
                   </button>
                 </div>
-                <div className="chat-row">
-                  <span className="chat-avatar">M</span>
-                  <div>
-                    <b>
-                      Maya <BadgeCheck />
-                    </b>
-                    <small>That bookstore sounds perfect!</small>
+                {matched ? (
+                  <div className="chat-row new-match-chat">
+                    <span className={`chat-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
+                    <div>
+                      <b>
+                        {profile.name} <BadgeCheck />
+                      </b>
+                      <small>You matched — say hello!</small>
+                    </div>
+                    <time>Now</time>
                   </div>
-                  <time>2m</time>
-                </div>
+                ) : (
+                  <div className="chat-lock">
+                    <Heart />
+                    <span><b>Your new chat will appear here</b><small>Both people must like each other first.</small></span>
+                  </div>
+                )}
                 <div className="chat-row">
                   <span className="chat-avatar blue">A</span>
                   <div>
@@ -763,7 +836,7 @@ function MobileScreen({
           </div>
           {profileOpen && (
             <section className="full-profile">
-              <div className={`full-profile-hero media-${mediaIndex}`}>
+              <div className={`full-profile-hero profile-${profile.id} media-${mediaIndex}`}>
                 <button
                   className="profile-back"
                   onClick={() => {
@@ -787,7 +860,7 @@ function MobileScreen({
                       <Share2 /> Share profile
                     </button>
                     <button onClick={blockProfile}>
-                      <Ban /> Block Maya
+                      <Ban /> Block {profile.name}
                     </button>
                     <button onClick={reportProfile}>
                       <Flag /> Report profile
@@ -829,10 +902,10 @@ function MobileScreen({
                 </span>
                 <div className="profile-gradient" />
                 <div className="full-name">
-                  <h2>Maya, 29</h2>
+                  <h2>{profile.name}, {profile.age}</h2>
                   <BadgeCheck />
                   <p>
-                    <MapPin /> Brooklyn · 3 miles away
+                    <MapPin /> {profile.city} · {profile.distance} miles away
                   </p>
                 </div>
               </div>
@@ -840,7 +913,7 @@ function MobileScreen({
                 {[0, 1, 2, 3].map((i) => (
                   <button
                     key={i}
-                    className={`media-${i} ${mediaIndex === i ? "active" : ""}`}
+                    className={`profile-${profile.id} media-${i} ${mediaIndex === i ? "active" : ""}`}
                     onClick={() => {
                       onMediaIndex(i);
                       setVideoPlaying(false);
@@ -870,20 +943,15 @@ function MobileScreen({
                     {mayaFavorite ? "Saved" : "Favorite"}
                   </button>
                 </div>
-                <h3>About Maya</h3>
-                <p>
-                  Product designer, amateur film photographer and a firm
-                  believer that the best weekends begin without an itinerary.
-                </p>
+                <h3>About {profile.name}</h3>
+                <p>{profile.about}</p>
                 <h3>Two truths and a tiny hill</h3>
                 <blockquote>
-                  “I make excellent dosa, know every indie cinema in Brooklyn,
-                  and think window seats are overrated.”
+                  “{profile.prompt}”
                 </blockquote>
                 <h3>Languages & life</h3>
                 <div className="full-tags">
-                  <span>English</span>
-                  <span>Gujarati</span>
+                  {profile.languages.map(language => <span key={language}>{language}</span>)}
                   <span>Open to relocate</span>
                   <span>Family-minded</span>
                 </div>
@@ -909,7 +977,7 @@ function MobileScreen({
                     onProfileOpen(false);
                   }}
                 >
-                  <Heart /> Like Maya
+                  <Heart /> Like {profile.name}
                 </button>
               </div>
             </section>
@@ -1156,35 +1224,33 @@ function MobileScreen({
 export default function Home() {
   const [theme, setTheme] = useState<Theme>("sunrise");
   const [activeTab, setActiveTab] = useState<Tab>("discover");
-  const [decision, setDecision] = useState<
+  const [decisionIos, setDecisionIos] = useState<
+    "idle" | "liked" | "passed" | "intro"
+  >("idle");
+  const [decisionAndroid, setDecisionAndroid] = useState<
     "idle" | "liked" | "passed" | "intro"
   >("idle");
   const [showReason, setShowReason] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [safetyOpen, setSafetyOpen] = useState(false);
-  const [blocked, setBlocked] = useState(false);
+  const [profileOpenIos, setProfileOpenIos] = useState(false);
+  const [profileOpenAndroid, setProfileOpenAndroid] = useState(false);
+  const [safetyOpenIos, setSafetyOpenIos] = useState(false);
+  const [safetyOpenAndroid, setSafetyOpenAndroid] = useState(false);
+  const [blockedIos, setBlockedIos] = useState(false);
+  const [blockedAndroid, setBlockedAndroid] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [mediaIndex, setMediaIndex] = useState(0);
+  const [mediaIndexIos, setMediaIndexIos] = useState(0);
+  const [mediaIndexAndroid, setMediaIndexAndroid] = useState(0);
   const [radius, setRadius] = useState(5);
+  const matched = decisionIos === "liked" && decisionAndroid === "liked";
   const sharedPreview = {
     activeTab,
     onTab: setActiveTab,
     theme,
     onTheme: setTheme,
-    decision,
-    onDecision: setDecision,
     showReason,
     onReason: () => setShowReason(!showReason),
-    profileOpen,
-    onProfileOpen: setProfileOpen,
-    safetyOpen,
-    onSafetyOpen: setSafetyOpen,
-    blocked,
-    onBlocked: setBlocked,
     hidden,
     onHidden: setHidden,
-    mediaIndex,
-    onMediaIndex: setMediaIndex,
     radius,
     onRadius: setRadius,
   };
@@ -1220,9 +1286,9 @@ export default function Home() {
             <em>near your life.</em>
           </h1>
           <p>
-            Drag Maya’s card left or right, tap either side of her photo to
-            browse three photos and one video prompt, or adjust the nearby
-            radius. Both previews update together.
+            Arjun sees Maya on iPhone while Maya sees Arjun on Android. Like
+            each profile independently to create a mutual match and unlock
+            chat on both phones.
           </p>
         </div>
         <div className="preview-controls">
@@ -1265,22 +1331,56 @@ export default function Home() {
           </div>
         </div>
         <div className="device-grid">
-          <MobileScreen platform="ios" {...sharedPreview} />
-          <MobileScreen platform="android" {...sharedPreview} />
+          <MobileScreen
+            platform="ios"
+            viewerName="Arjun"
+            profile={demoProfiles.maya}
+            decision={decisionIos}
+            onDecision={setDecisionIos}
+            matched={matched}
+            targetLikedYou={decisionAndroid === "liked"}
+            profileOpen={profileOpenIos}
+            onProfileOpen={setProfileOpenIos}
+            safetyOpen={safetyOpenIos}
+            onSafetyOpen={setSafetyOpenIos}
+            blocked={blockedIos}
+            onBlocked={setBlockedIos}
+            mediaIndex={mediaIndexIos}
+            onMediaIndex={setMediaIndexIos}
+            {...sharedPreview}
+          />
+          <MobileScreen
+            platform="android"
+            viewerName="Maya"
+            profile={demoProfiles.arjun}
+            decision={decisionAndroid}
+            onDecision={setDecisionAndroid}
+            matched={matched}
+            targetLikedYou={decisionIos === "liked"}
+            profileOpen={profileOpenAndroid}
+            onProfileOpen={setProfileOpenAndroid}
+            safetyOpen={safetyOpenAndroid}
+            onSafetyOpen={setSafetyOpenAndroid}
+            blocked={blockedAndroid}
+            onBlocked={setBlockedAndroid}
+            mediaIndex={mediaIndexAndroid}
+            onMediaIndex={setMediaIndexAndroid}
+            {...sharedPreview}
+          />
         </div>
         <div className="platform-notes">
           <div>
-            <strong>iOS direction</strong>
+            <strong>Step 1 · Arjun likes Maya</strong>
             <span>
-              Compact navigation, softer motion, sheet-style actions and
-              familiar iPhone proportions.
+              Tap the heart on the iPhone. Maya appears under Arjun’s “You
+              liked” history while he waits.
             </span>
           </div>
           <div>
-            <strong>Android direction</strong>
+            <strong>Step 2 · Maya likes Arjun</strong>
             <span>
-              Material-style active states, roomier targets, system back
-              behavior and Pixel proportions.
+              Tap the heart on Android. Mila recognizes the mutual like and
+              opens chat for both people.
             </span>
           </div>
         </div>
