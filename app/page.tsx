@@ -69,7 +69,7 @@ type Theme = (typeof themes)[number]["id"];
 type Tab = "discover" | "explore" | "likes" | "chats" | "you";
 type Platform = "ios" | "android";
 type DemoProfile = {
-  id: "maya" | "arjun";
+  id: "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo";
   name: string;
   age: number;
   job: string;
@@ -115,6 +115,35 @@ const demoProfiles: Record<DemoProfile["id"], DemoProfile> = {
     about: "Climate-tech engineer, weekend trail hunter and enthusiastic host of small dinner parties with very ambitious menus.",
     prompt: "I can fix a bike, make a memorable biryani, and will always choose the scenic route.",
   },
+  priya: {
+    id: "priya", name: "Priya", age: 31, job: "Healthcare strategist", city: "Queens", distance: 6,
+    languages: ["English", "Tamil"], tags: ["Sunday markets", "Marriage-minded"],
+    about: "Healthcare strategist who plans thoughtful trips, hosts lively brunches and always has a book recommendation.",
+    prompt: "My ideal Sunday includes a farmers market, filter coffee and a long walk without checking the time.",
+  },
+  marcus: {
+    id: "marcus", name: "Marcus", age: 32, job: "Architect", city: "Manhattan", distance: 4,
+    languages: ["English", "French"], tags: ["Design", "Live jazz"],
+    about: "Architect, amateur pianist and believer that a great neighborhood is best explored on foot.",
+    prompt: "I will sketch the building, find the jazz bar and order dessert for the table.",
+  },
+  hana: {
+    id: "hana", name: "Hana", age: 29, job: "Documentary producer", city: "Jersey City", distance: 8,
+    languages: ["English", "Korean"], tags: ["Documentaries", "Waterfront walks"],
+    about: "Documentary producer who loves quiet bookstores, waterfront walks and stories that change how we see people.",
+    prompt: "Ask me about the tiny noodle shop I plan every trip around.",
+  },
+  leo: {
+    id: "leo", name: "Leo", age: 31, job: "Literary editor", city: "Brooklyn", distance: 5,
+    languages: ["English", "Spanish"], tags: ["Bookshops", "Home cooking"],
+    about: "Literary editor, patient home cook and regular at independent bookshops around Brooklyn.",
+    prompt: "I make a very good tortilla española and maintain an unnecessarily detailed reading list.",
+  },
+};
+
+const discoveryProfiles: Record<Platform, DemoProfile[]> = {
+  ios: [demoProfiles.maya, demoProfiles.priya, demoProfiles.hana],
+  android: [demoProfiles.arjun, demoProfiles.marcus, demoProfiles.leo],
 };
 
 const interestOptions = [
@@ -252,7 +281,7 @@ const featureGroups = [
 function MobileScreen({
   platform,
   viewerName,
-  profile,
+  profile: initialProfile,
   matched,
   targetLikedYou,
   activeTab,
@@ -304,6 +333,12 @@ function MobileScreen({
 }) {
   const dragStart = useRef<number | null>(null);
   const [dragX, setDragX] = useState(0);
+  const [discoveryIndex, setDiscoveryIndex] = useState(0);
+  const [discoveryHistory, setDiscoveryHistory] = useState<number[]>([]);
+  const [cardDecision, setCardDecision] = useState<"idle" | "liked" | "passed" | "intro">("idle");
+  const [discoverNotice, setDiscoverNotice] = useState("");
+  const [messageDraft, setMessageDraft] = useState("");
+  const [messageSent, setMessageSent] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [selfPreviewOpen, setSelfPreviewOpen] = useState(false);
   const [editorSection, setEditorSection] = useState<
@@ -339,6 +374,8 @@ function MobileScreen({
   const [interests, setInterests] = useState(["Travel", "Films", "Cooking"]);
   const [astrology, setAstrology] = useState(true);
   const [saved, setSaved] = useState(false);
+  const queue = discoveryProfiles[platform];
+  const profile = queue[discoveryIndex] || initialProfile;
   const zodiac = zodiacFor(birthDate);
   const selfProfile = platform === "ios" ? demoProfiles.arjun : demoProfiles.maya;
   const openEditor = (
@@ -368,9 +405,37 @@ function MobileScreen({
           ? [...current, item]
           : current,
     );
+  const advanceProfile = (action: "liked" | "passed" | "intro" | "next") => {
+    const actedOn = profile.name;
+    setDiscoveryHistory((items) => [...items, discoveryIndex]);
+    if (action !== "next") onDecision(action);
+    setCardDecision(action === "next" ? "idle" : action);
+    setDiscoverNotice(
+      action === "liked" ? `You liked ${actedOn}` :
+      action === "intro" ? `Introduction saved for ${actedOn}` :
+      action === "passed" ? `Passed on ${actedOn}` : `Showing another profile`,
+    );
+    setTimeout(() => {
+      setDiscoveryIndex((current) => (current + 1) % queue.length);
+      onMediaIndex(0);
+      setCardDecision("idle");
+    }, 260);
+  };
+  const undoProfile = () => {
+    const previous = discoveryHistory.at(-1);
+    if (previous === undefined) {
+      setDiscoverNotice("Nothing to undo yet");
+      return;
+    }
+    setDiscoveryIndex(previous);
+    setDiscoveryHistory((items) => items.slice(0, -1));
+    onDecision("idle");
+    setCardDecision("idle");
+    setDiscoverNotice("Previous profile restored");
+  };
   const finishSwipe = () => {
-    if (dragX > 58) onDecision("liked");
-    else if (dragX < -58) onDecision("passed");
+    if (dragX > 58) advanceProfile("liked");
+    else if (dragX < -58) advanceProfile("passed");
     setDragX(0);
     dragStart.current = null;
   };
@@ -413,7 +478,7 @@ function MobileScreen({
       setMayaFavorite(true);
       answerVoice(`${profile.name} is saved privately to Favorites.`);
     } else if (words.includes("like")) {
-      onDecision("liked");
+      advanceProfile("liked");
       answerVoice(`You liked ${profile.name}. You can undo this from your sent likes.`);
     } else if (words.includes("intro") || words.includes("connect")) {
       setIntroDraft(true);
@@ -482,12 +547,17 @@ function MobileScreen({
               <div className="discover-screen">
                 <div className="discovery-title">
                   <span>
-                    <LocateFixed /> Nearby · 12 profiles
+                    <LocateFixed /> Nearby · {queue.length} profiles
                   </span>
                   <button onClick={cycleRadius}>
                     Within {radius} mi <ChevronDown />
                   </button>
                 </div>
+                <div className="profile-progress">
+                  <span>{discoveryIndex + 1} of {queue.length}</span>
+                  <i><b style={{width: `${((discoveryIndex + 1) / queue.length) * 100}%`}} /></i>
+                </div>
+                {discoverNotice && <div className="discover-notice" role="status"><Check /> {discoverNotice}</div>}
                 {blocked ? (
                   <div className="blocked-state">
                     <span>
@@ -500,7 +570,7 @@ function MobileScreen({
                 ) : (
                   <>
                   <article
-                      className={`profile-card card-${decision} ${dragX !== 0 ? "is-dragging" : ""}`}
+                      className={`profile-card card-${cardDecision} ${dragX !== 0 ? "is-dragging" : ""}`}
                       style={
                         dragX
                           ? {
@@ -537,11 +607,11 @@ function MobileScreen({
                             <Play /> Video · 0:12
                           </span>
                         )}
-                        {decision !== "idle" && (
+                        {cardDecision !== "idle" && (
                           <div className="decision-stamp">
-                            {decision === "passed"
+                            {cardDecision === "passed"
                               ? "Maybe later"
-                              : decision === "intro"
+                              : cardDecision === "intro"
                                 ? "Intro sent"
                                 : "Liked"}
                           </div>
@@ -605,27 +675,27 @@ function MobileScreen({
                     <div className="swipe-actions">
                       <button
                         aria-label="Pass"
-                        onClick={() => onDecision("passed")}
+                        onClick={() => advanceProfile("passed")}
                       >
                         <X />
                       </button>
                       <button
                         aria-label="Undo"
-                        onClick={() => onDecision("idle")}
+                        onClick={undoProfile}
                       >
                         <RotateCcw />
                       </button>
                       <button
                         className="priority"
                         aria-label="Meaningful intro"
-                        onClick={() => onDecision("intro")}
+                        onClick={() => advanceProfile("intro")}
                       >
                         <Star />
                       </button>
                       <button
                         className="like"
                         aria-label="Like"
-                        onClick={() => onDecision("liked")}
+                        onClick={() => advanceProfile("liked")}
                       >
                         <Heart />
                       </button>
@@ -635,14 +705,15 @@ function MobileScreen({
                       <span>Meaningful intro</span>
                       <span>Like</span>
                     </div>
+                    <button className="next-profile" onClick={() => advanceProfile("next")}>Next profile <ChevronDown /></button>
                   </>
                 )}
                 {matched && (
                   <div className="match-moment">
-                    <span className={`match-photo profile-${profile.id}`} />
+                    <span className={`match-photo profile-${initialProfile.id}`} />
                     <Sparkles />
                     <h3>It’s a match!</h3>
-                    <p>{viewerName} and {profile.name} liked each other. Chat is now open.</p>
+                    <p>{viewerName} and {initialProfile.name} liked each other. Chat is now open.</p>
                     <button onClick={() => onTab("chats")}>
                       Say hello <MessageCircle />
                     </button>
@@ -826,16 +897,18 @@ function MobileScreen({
                   </button>
                 </div>
                 {matched ? (
-                  <div className="chat-row new-match-chat">
-                    <span className={`chat-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
-                    <div>
-                      <b>
-                        {profile.name} <BadgeCheck />
-                      </b>
-                      <small>You matched — say hello!</small>
+                  <>
+                    <div className="chat-row new-match-chat">
+                      <span className={`chat-avatar target-mini profile-${initialProfile.id}`}>{initialProfile.name[0]}</span>
+                      <div><b>{initialProfile.name} <BadgeCheck /></b><small>{messageSent ? `You: ${messageDraft}` : "You matched — say hello!"}</small></div>
+                      <time>Now</time>
                     </div>
-                    <time>Now</time>
-                  </div>
+                    <div className="quick-message">
+                      <Input value={messageDraft} onChange={(event) => {setMessageDraft(event.target.value); setMessageSent(false);}} placeholder={`Message ${initialProfile.name}…`} aria-label={`Message ${initialProfile.name}`} />
+                      <button disabled={!messageDraft.trim()} onClick={() => setMessageSent(true)} aria-label="Send message"><Send /></button>
+                    </div>
+                    {messageSent && <small className="message-confirm"><Check /> Message sent</small>}
+                  </>
                 ) : (
                   <div className="chat-lock">
                     <Heart />
@@ -1093,7 +1166,7 @@ function MobileScreen({
                 </button>
                 <button
                   onClick={() => {
-                    onDecision("liked");
+                    advanceProfile("liked");
                     onProfileOpen(false);
                   }}
                 >
