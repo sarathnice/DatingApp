@@ -12,6 +12,7 @@ import {
   CalendarHeart,
   Check,
   ChevronDown,
+  Clock3,
   Compass,
   EyeOff,
   Flag,
@@ -22,6 +23,7 @@ import {
   LocateFixed,
   MapPin,
   MessageCircle,
+  Mic,
   MoreHorizontal,
   Palette,
   Play,
@@ -37,6 +39,7 @@ import {
   Star,
   UserRound,
   UsersRound,
+  Volume2,
   WandSparkles,
   X,
   Zap,
@@ -74,6 +77,15 @@ type DemoProfile = {
   tags: string[];
   about: string;
   prompt: string;
+};
+type VoiceRecognition = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  onresult: (event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void;
+  onerror: () => void;
+  onend: () => void;
 };
 
 const demoProfiles: Record<DemoProfile["id"], DemoProfile> = {
@@ -293,6 +305,15 @@ function MobileScreen({
   const [editorOpen, setEditorOpen] = useState(false);
   const [profileNotice, setProfileNotice] = useState("");
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [voiceResponse, setVoiceResponse] = useState(
+    "Say “brief me” or choose a command below.",
+  );
+  const [briefScheduled, setBriefScheduled] = useState(false);
+  const [briefTime, setBriefTime] = useState("9:00 PM");
+  const [introDraft, setIntroDraft] = useState(false);
+  const [introSent, setIntroSent] = useState(false);
   const [likesView, setLikesView] = useState<
     "incoming" | "sent" | "favorites"
   >("incoming");
@@ -351,6 +372,64 @@ function MobileScreen({
     onBlocked(true);
     onProfileOpen(false);
     onSafetyOpen(false);
+  };
+  const speak = (text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.94;
+    window.speechSynthesis.speak(utterance);
+  };
+  const answerVoice = (text: string) => {
+    setVoiceResponse(text);
+    speak(text);
+  };
+  const runVoiceCommand = (command: string) => {
+    const words = command.toLowerCase();
+    if (words.includes("brief")) {
+      answerVoice(
+        `Good evening ${viewerName}. ${matched ? `You matched with ${profile.name}, and your chat is ready.` : targetLikedYou ? `${profile.name} liked you. Like them back to open chat.` : `You have three new likes. ${profile.name} is today’s strongest recommendation.`}`,
+      );
+    } else if (words.includes("next")) {
+      onMediaIndex((mediaIndex + 1) % 4);
+      answerVoice(`Showing the next ${profile.name} photo.`);
+    } else if (words.includes("favorite") || words.includes("save")) {
+      setMayaFavorite(true);
+      answerVoice(`${profile.name} is saved privately to Favorites.`);
+    } else if (words.includes("like")) {
+      onDecision("liked");
+      answerVoice(`You liked ${profile.name}. You can undo this from your sent likes.`);
+    } else if (words.includes("intro") || words.includes("connect")) {
+      setIntroDraft(true);
+      setIntroSent(false);
+      answerVoice(`I drafted an introduction for ${profile.name}. Please review it before sending.`);
+    } else if (words.includes("schedule") || words.includes("nine") || words.includes("9")) {
+      setBriefScheduled(true);
+      answerVoice(`Your private Mila Daily briefing is scheduled for ${briefTime}.`);
+    } else {
+      answerVoice("Try saying: brief me, like this profile, save as favorite, next photo, or draft an intro.");
+    }
+  };
+  const startListening = () => {
+    const voiceWindow = window as typeof window & {
+      SpeechRecognition?: new () => VoiceRecognition;
+      webkitSpeechRecognition?: new () => VoiceRecognition;
+    };
+    const Recognition =
+      voiceWindow.SpeechRecognition || voiceWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      answerVoice("Microphone commands are not available in this browser. The tap commands below still work.");
+      return;
+    }
+    const recognition = new Recognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onresult = (event) => runVoiceCommand(event.results[0][0].transcript);
+    recognition.onerror = () => answerVoice("I could not hear that. Please try again or tap a command.");
+    recognition.onend = () => setListening(false);
+    setListening(true);
+    recognition.start();
   };
   return (
     <div className={`device-column ${platform}`}>
@@ -1195,6 +1274,102 @@ function MobileScreen({
                     </p>
                   )}
                 </div>
+              </div>
+            </section>
+          )}
+          {!voiceOpen && !editorOpen && !profileOpen && (
+            <button
+              className="voice-fab"
+              onClick={() => setVoiceOpen(true)}
+              aria-label="Open Mila Voice"
+            >
+              <Mic />
+              <span>Mila Voice</span>
+            </button>
+          )}
+          {voiceOpen && (
+            <section className="voice-assistant">
+              <header>
+                <button onClick={() => setVoiceOpen(false)} aria-label="Close Mila Voice">
+                  <ArrowLeft />
+                </button>
+                <span>
+                  <b>Mila Voice</b>
+                  <small>Private voice dating assistant</small>
+                </span>
+                <i>{briefScheduled ? `${briefTime} daily` : "On demand"}</i>
+              </header>
+              <div className="voice-scroll">
+                <div className="voice-hero">
+                  <button
+                    className={listening ? "is-listening" : ""}
+                    onClick={startListening}
+                    aria-label={listening ? "Listening" : "Start voice command"}
+                  >
+                    <Mic />
+                  </button>
+                  <strong>{listening ? "Listening…" : "Tap, then speak"}</strong>
+                  <small>No always-on microphone</small>
+                </div>
+                <div className="voice-response" aria-live="polite">
+                  <Volume2 />
+                  <p>{voiceResponse}</p>
+                  <button onClick={() => speak(voiceResponse)} aria-label="Replay response">
+                    Replay
+                  </button>
+                </div>
+                <div className="voice-section">
+                  <h3>Try a voice action</h3>
+                  <div className="voice-commands">
+                    {["Brief me", `Like ${profile.name}`, "Save favorite", "Next photo", "Draft an intro"].map(command => (
+                      <button key={command} onClick={() => runVoiceCommand(command)}>
+                        {command}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="voice-section schedule-card">
+                  <div>
+                    <Clock3 />
+                    <span>
+                      <b>Mila Daily</b>
+                      <small>Matches, likes and recommended profiles</small>
+                    </span>
+                    <Switch
+                      size="sm"
+                      checked={briefScheduled}
+                      onCheckedChange={(checked) => {
+                        setBriefScheduled(checked);
+                        answerVoice(checked ? `Daily briefing scheduled for ${briefTime}.` : "Daily briefing turned off.");
+                      }}
+                    />
+                  </div>
+                  <label>
+                    Briefing time
+                    <NativeSelect value={briefTime} onChange={(event) => setBriefTime(event.target.value)}>
+                      <NativeSelectOption>7:00 PM</NativeSelectOption>
+                      <NativeSelectOption>8:00 PM</NativeSelectOption>
+                      <NativeSelectOption>9:00 PM</NativeSelectOption>
+                      <NativeSelectOption>10:00 PM</NativeSelectOption>
+                    </NativeSelect>
+                  </label>
+                  <small className="prototype-note">Preview setting only—background notifications come with the native app.</small>
+                </div>
+                {introDraft && (
+                  <div className="intro-review">
+                    <span><Sparkles /> AI draft · review required</span>
+                    <p>Hi {profile.name}—I noticed we both enjoy {profile.tags[0].toLowerCase()}. I’d love to hear what got you into it.</p>
+                    <div>
+                      <button onClick={() => setIntroDraft(false)}>Discard</button>
+                      <button onClick={() => {
+                        setIntroSent(true);
+                        setIntroDraft(false);
+                        answerVoice(`Your introduction to ${profile.name} was sent after your confirmation.`);
+                      }}><Send /> Confirm &amp; send</button>
+                    </div>
+                  </div>
+                )}
+                {introSent && <div className="voice-success"><Check /> Introduction sent with your approval</div>}
               </div>
             </section>
           )}
