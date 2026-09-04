@@ -15,6 +15,7 @@ import {
   Clock3,
   Compass,
   EyeOff,
+  Eye,
   Flag,
   Globe2,
   GraduationCap,
@@ -25,6 +26,7 @@ import {
   MessageCircle,
   Mic,
   MoreHorizontal,
+  Pencil,
   Palette,
   Play,
   RotateCcw,
@@ -303,6 +305,10 @@ function MobileScreen({
   const dragStart = useRef<number | null>(null);
   const [dragX, setDragX] = useState(0);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [selfPreviewOpen, setSelfPreviewOpen] = useState(false);
+  const [editorSection, setEditorSection] = useState<
+    "basics" | "story" | "work" | "lifestyle"
+  >("basics");
   const [profileNotice, setProfileNotice] = useState("");
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -325,13 +331,23 @@ function MobileScreen({
   const [about, setAbout] = useState(
     "Curious by nature, happiest around good food, live music and thoughtful conversation.",
   );
-  const [workTitle, setWorkTitle] = useState("Product designer");
+  const [workTitle, setWorkTitle] = useState(
+    platform === "ios" ? "Climate-tech engineer" : "Product designer",
+  );
   const [education, setEducation] = useState("Bachelor’s degree");
   const [schoolName, setSchoolName] = useState("Parsons School of Design");
   const [interests, setInterests] = useState(["Travel", "Films", "Cooking"]);
   const [astrology, setAstrology] = useState(true);
   const [saved, setSaved] = useState(false);
   const zodiac = zodiacFor(birthDate);
+  const selfProfile = platform === "ios" ? demoProfiles.arjun : demoProfiles.maya;
+  const openEditor = (
+    section: "basics" | "story" | "work" | "lifestyle" = "basics",
+  ) => {
+    setEditorSection(section);
+    setSelfPreviewOpen(false);
+    setEditorOpen(true);
+  };
   const completeness = Math.min(
     100,
     52 +
@@ -850,16 +866,41 @@ function MobileScreen({
             )}
             {activeTab === "you" && (
               <div className="inner-screen you-screen">
-                <span className="screen-kicker">Your Mila</span>
-                <h2>Make it feel like you.</h2>
-                <p>Control your profile, privacy and appearance.</p>
-                <div className="profile-summary">
-                  <div className="you-avatar">S</div>
-                  <span>
-                    <b>Your profile</b>
-                    <small>{completeness}% complete · Verified</small>
-                  </span>
-                  <button onClick={() => setEditorOpen(true)}>Edit</button>
+                <span className="screen-kicker">Your profile</span>
+                <h2>Be clear. Be yourself.</h2>
+                <p>Preview exactly what people see, then edit one section at a time.</p>
+                <div className={`owner-card profile-${selfProfile.id} media-0`}>
+                  <div className="owner-card-shade" />
+                  <span className="owner-score">{completeness}% complete</span>
+                  <div className="owner-card-copy">
+                    <div>
+                      <b>{viewerName}, {selfProfile.age}</b>
+                      <BadgeCheck />
+                    </div>
+                    <small>{workTitle || "Add your work"} · {selfProfile.city}</small>
+                  </div>
+                </div>
+                <div className="owner-actions">
+                  <button onClick={() => setSelfPreviewOpen(true)}>
+                    <Eye /> Preview profile
+                  </button>
+                  <button onClick={() => openEditor("basics")}>
+                    <Pencil /> Edit profile
+                  </button>
+                </div>
+                <div className="profile-section-list">
+                  <button onClick={() => openEditor("basics")}>
+                    <UserRound /><span><b>Basics</b><small>Identity, height and birthday</small></span><strong>Complete</strong>
+                  </button>
+                  <button onClick={() => openEditor("story")}>
+                    <MessageCircle /><span><b>Your story</b><small>About you and interests</small></span><strong>Complete</strong>
+                  </button>
+                  <button onClick={() => openEditor("work")}>
+                    <BriefcaseBusiness /><span><b>Work &amp; education</b><small>Title, degree and school</small></span><strong>Complete</strong>
+                  </button>
+                  <button onClick={() => openEditor("lifestyle")}>
+                    <Heart /><span><b>Dating &amp; lifestyle</b><small>Intent, family plans and habits</small></span><strong className="add-detail">Add details</strong>
+                  </button>
                 </div>
                 <div
                   className={`hide-profile-card ${hidden ? "is-hidden" : ""}`}
@@ -880,7 +921,7 @@ function MobileScreen({
                     aria-label="Hide my profile"
                   />
                 </div>
-                <h3>Appearance</h3>
+                <h3>Choose your look</h3>
                 <div className="in-app-themes">
                   {themes.map((item) => (
                     <button
@@ -1061,6 +1102,58 @@ function MobileScreen({
               </div>
             </section>
           )}
+          {selfPreviewOpen && (
+            <section className="self-profile-preview">
+              <header>
+                <button onClick={() => setSelfPreviewOpen(false)} aria-label="Back to profile">
+                  <ArrowLeft />
+                </button>
+                <span>
+                  <b>Preview profile</b>
+                  <small>Previewed as a potential match</small>
+                </span>
+                <button className="preview-edit" onClick={() => openEditor("basics")}>Edit</button>
+              </header>
+              <div className="self-preview-scroll">
+                <div className={`self-preview-hero profile-${selfProfile.id} media-0`}>
+                  <div className="story-dots"><i className="active"/><i/><i/><i/></div>
+                  <span className="verified-pill"><BadgeCheck /> Verified</span>
+                  <div className="owner-card-shade" />
+                  <div className="self-preview-name">
+                    <h2>{viewerName}, {selfProfile.age}</h2>
+                    <BadgeCheck />
+                    <p><MapPin /> {selfProfile.city}</p>
+                  </div>
+                </div>
+                <div className="preview-visibility"><Eye /> Visible to people you meet in Discover</div>
+                <article className="preview-section">
+                  <header><h3>About me</h3><button onClick={() => openEditor("story")}>Edit</button></header>
+                  <p>{about || "Add a short introduction so people can understand your personality."}</p>
+                </article>
+                <article className="preview-section">
+                  <header><h3>What I’m looking for</h3><button onClick={() => openEditor("lifestyle")}>Edit</button></header>
+                  <span className="intent-pill"><Heart /> Long-term relationship</span>
+                  <div className="preview-kickers">
+                    <span>Marriage-minded</span><span>Open to children</span><span>Open to relocate</span>
+                  </div>
+                </article>
+                <article className="preview-section">
+                  <header><h3>Life at a glance</h3><button onClick={() => openEditor("work")}>Edit</button></header>
+                  <div className="preview-facts">
+                    <span><BriefcaseBusiness></BriefcaseBusiness><b>{workTitle || "Work title"}</b><small>Career</small></span>
+                    <span><GraduationCap></GraduationCap><b>{education || "Education"}</b><small>{schoolName || "School"}</small></span>
+                    <span><Ruler></Ruler><b>{height} cm</b><small>Height</small></span>
+                    <span><Sparkles></Sparkles><b>{zodiac}</b><small>From birthday</small></span>
+                  </div>
+                </article>
+                <article className="preview-section">
+                  <header><h3>Interests</h3><button onClick={() => openEditor("story")}>Edit</button></header>
+                  <div className="preview-kickers">{interests.map(item => <span key={item}>{item}</span>)}</div>
+                </article>
+                <div className="preview-note"><EyeOff></EyeOff><span><b>Private details stay private</b><small>Your birth date, preference filters and other private choices are never shown here.</small></span></div>
+              </div>
+            </section>
+          )}
           {editorOpen && (
             <section className="profile-builder">
               <header>
@@ -1101,7 +1194,18 @@ function MobileScreen({
                     Add authentic details to improve introductions. Optional
                     fields never block your profile.
                   </p>
+                  <button className="preview-from-editor" onClick={() => {
+                    setEditorOpen(false);
+                    setSelfPreviewOpen(true);
+                  }}><Eye /> Preview profile</button>
                 </div>
+                <div className="editor-section-tabs" aria-label="Edit profile section">
+                  <button aria-pressed={editorSection === "basics"} onClick={() => setEditorSection("basics")}>Basics</button>
+                  <button aria-pressed={editorSection === "story"} onClick={() => setEditorSection("story")}>Story</button>
+                  <button aria-pressed={editorSection === "work"} onClick={() => setEditorSection("work")}>Work</button>
+                  <button aria-pressed={editorSection === "lifestyle"} onClick={() => setEditorSection("lifestyle")}>Lifestyle</button>
+                </div>
+                {editorSection === "basics" && <>
                 <div className="builder-section">
                   <h3>Identity</h3>
                   <label>
@@ -1129,126 +1233,58 @@ function MobileScreen({
                     />
                   </div>
                 </div>
-                <div className="builder-section story-section">
-                  <h3>
-                    Your story <small>{about.length}/300</small>
-                  </h3>
-                  <label className="about-field">
-                    <span>
-                      <UserRound /> About me
-                      <small>A quick introduction in your own words</small>
-                    </span>
-                    <textarea
-                      value={about}
-                      maxLength={300}
-                      onChange={(e) => setAbout(e.target.value)}
-                      placeholder="What should someone know about you?"
-                    />
-                  </label>
-                </div>
-                <div className="builder-section">
-                  <h3>Work &amp; education</h3>
-                  <label>
-                    <span>
-                      <BriefcaseBusiness /> Work title <small>Optional</small>
-                    </span>
-                    <Input
-                      value={workTitle}
-                      maxLength={60}
-                      onChange={(e) => setWorkTitle(e.target.value)}
-                      placeholder="e.g. Product designer"
-                    />
-                  </label>
-                  <label>
-                    <span>
-                      <GraduationCap /> Education <small>Optional</small>
-                    </span>
-                    <NativeSelect
-                      size="sm"
-                      value={education}
-                      onChange={(e) => setEducation(e.target.value)}
-                    >
-                      <NativeSelectOption value="">Prefer not to say</NativeSelectOption>
-                      <NativeSelectOption>High school</NativeSelectOption>
-                      <NativeSelectOption>Trade school</NativeSelectOption>
-                      <NativeSelectOption>Associate degree</NativeSelectOption>
-                      <NativeSelectOption>Bachelor’s degree</NativeSelectOption>
-                      <NativeSelectOption>Master’s degree</NativeSelectOption>
-                      <NativeSelectOption>Doctorate</NativeSelectOption>
-                    </NativeSelect>
-                  </label>
-                  <label>
-                    <span>
-                      <GraduationCap /> School name <small>Optional</small>
-                    </span>
-                    <Input
-                      value={schoolName}
-                      maxLength={80}
-                      onChange={(e) => setSchoolName(e.target.value)}
-                      placeholder="College or university"
-                    />
-                  </label>
-                </div>
                 <div className="builder-section">
                   <h3>About you</h3>
                   <label>
                     <span>
                       <Ruler /> Height <small>Optional</small>
                     </span>
-                    <div className="unit-input">
-                      <Input
-                        type="number"
-                        min="120"
-                        max="230"
-                        value={height}
-                        onChange={(e) => setHeight(e.target.value)}
-                      />
-                      <b>cm</b>
-                    </div>
+                    <div className="unit-input"><Input type="number" min="120" max="230" value={height} onChange={(e) => setHeight(e.target.value)} /><b>cm</b></div>
                   </label>
                   <label>
                     <span>
                       <CakeSlice /> Date of birth <small>Always private</small>
                     </span>
-                    <Input
-                      type="date"
-                      value={birthDate}
-                      onChange={(e) => setBirthDate(e.target.value)}
-                    />
+                    <Input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
                   </label>
-                  <div className="zodiac-result">
-                    <span>{zodiacSymbol[zodiac]}</span>
-                    <div>
-                      <b>{zodiac}</b>
-                      <small>
-                        Calculated automatically · Choose whether to display
-                      </small>
-                    </div>
-                    <Switch
-                      size="sm"
-                      checked={astrology}
-                      onCheckedChange={setAstrology}
-                    />
-                  </div>
+                  <div className="zodiac-result"><span>{zodiacSymbol[zodiac]}</span><div><b>{zodiac}</b><small>Calculated automatically · Choose whether to display</small></div><Switch size="sm" checked={astrology} onCheckedChange={setAstrology} /></div>
+                </div>
+                </>}
+                {editorSection === "story" && <>
+                <div className="builder-section story-section">
+                  <h3>About you <small>{about.length}/300</small></h3>
+                  <label className="about-field">
+                    <span><UserRound /> About me <small>Write a friendly, specific introduction</small></span>
+                    <textarea value={about} maxLength={300} onChange={(e) => setAbout(e.target.value)} placeholder="What should someone know about you?" />
+                  </label>
                 </div>
                 <div className="builder-section">
-                  <h3>
-                    Interests <small>{interests.length}/5 selected</small>
-                  </h3>
+                  <h3>Interests <small>{interests.length}/5 selected</small></h3>
                   <div className="interest-cloud">
                     {interestOptions.map((item) => (
-                      <button
-                        key={item}
-                        onClick={() => toggleInterest(item)}
-                        aria-pressed={interests.includes(item)}
-                      >
-                        {interests.includes(item) && <Check />}
-                        {item}
+                      <button key={item} onClick={() => toggleInterest(item)} aria-pressed={interests.includes(item)}>
+                        {interests.includes(item) && <Check />} {item}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="astrology-card">
+                </>}
+                {editorSection === "work" && <div className="builder-section">
+                  <h3>Work &amp; education</h3>
+                  <label><span><BriefcaseBusiness /> Work title <small>Optional</small></span><Input value={workTitle} maxLength={60} onChange={(e) => setWorkTitle(e.target.value)} placeholder="e.g. Product designer" /></label>
+                  <label><span><GraduationCap /> Education <small>Optional</small></span><NativeSelect size="sm" value={education} onChange={(e) => setEducation(e.target.value)}><NativeSelectOption value="">Prefer not to say</NativeSelectOption><NativeSelectOption>High school</NativeSelectOption><NativeSelectOption>Trade school</NativeSelectOption><NativeSelectOption>Associate degree</NativeSelectOption><NativeSelectOption>Bachelor’s degree</NativeSelectOption><NativeSelectOption>Master’s degree</NativeSelectOption><NativeSelectOption>Doctorate</NativeSelectOption></NativeSelect></label>
+                  <label><span><GraduationCap /> School name <small>Optional</small></span><Input value={schoolName} maxLength={80} onChange={(e) => setSchoolName(e.target.value)} placeholder="College or university" /></label>
+                </div>}
+                {editorSection === "lifestyle" && <div className="builder-section lifestyle-editor">
+                  <h3>Dating &amp; lifestyle</h3>
+                  <label><span><Heart /> Dating intent <small>Shown on profile</small></span><NativeSelect size="sm"><NativeSelectOption>Long-term relationship</NativeSelectOption><NativeSelectOption>Marriage-minded</NativeSelectOption><NativeSelectOption>Exploring</NativeSelectOption></NativeSelect></label>
+                  <label><span><UsersRound /> Family plans <small>Optional</small></span><NativeSelect size="sm"><NativeSelectOption>Open to children</NativeSelectOption><NativeSelectOption>Wants children</NativeSelectOption><NativeSelectOption>Does not want children</NativeSelectOption><NativeSelectOption>Unsure</NativeSelectOption></NativeSelect></label>
+                  <label><span><Globe2 /> Relocation <small>Optional</small></span><NativeSelect size="sm"><NativeSelectOption>Open to relocate</NativeSelectOption><NativeSelectOption>Not open to relocate</NativeSelectOption><NativeSelectOption>Open to discuss</NativeSelectOption></NativeSelect></label>
+                  <div className="lifestyle-quick">
+                    <button><span>Smoking</span><b>Never</b></button><button><span>Drinking</span><b>Socially</b></button><button><span>Pets</span><b>Enjoys pets</b></button><button><span>Communication</span><b>Balanced</b></button>
+                  </div>
+                </div>}
+                {editorSection === "basics" && <div className="astrology-card">
                   <div>
                     <Sparkles />
                     <span>
@@ -1273,11 +1309,11 @@ function MobileScreen({
                         : "Curious connection—different rhythms can create good conversation."}
                     </p>
                   )}
-                </div>
+                </div>}
               </div>
             </section>
           )}
-          {!voiceOpen && !editorOpen && !profileOpen && (
+          {!voiceOpen && !editorOpen && !profileOpen && !selfPreviewOpen && (
             <button
               className="voice-fab"
               onClick={() => setVoiceOpen(true)}
