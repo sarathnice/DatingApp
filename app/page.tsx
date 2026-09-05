@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -12,6 +12,7 @@ import {
   CalendarHeart,
   Check,
   ChevronDown,
+  ChevronUp,
   Clock3,
   Compass,
   EyeOff,
@@ -49,6 +50,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -80,11 +82,23 @@ type DemoProfile = {
   about: string;
   prompt: string;
 };
+type IntroRequest = {
+  from: string;
+  to: string;
+  text: string;
+  status: "pending" | "accepted" | "declined";
+};
+type ChatMessage = {
+  id: string;
+  sender: string;
+  text: string;
+};
 type VoiceRecognition = {
   lang: string;
   interimResults: boolean;
   continuous: boolean;
   start: () => void;
+  abort: () => void;
   onresult: (event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void;
   onerror: () => void;
   onend: () => void;
@@ -194,8 +208,8 @@ const zodiacSymbol: Record<string, string> = {
 };
 
 const navigation = [
-  { id: "discover", label: "Discover", icon: Sparkles },
-  { id: "explore", label: "Explore", icon: Compass },
+  { id: "discover", label: "Match", icon: Sparkles },
+  { id: "explore", label: "Discover", icon: Compass },
   { id: "likes", label: "Likes", icon: Heart },
   { id: "chats", label: "Chats", icon: MessageCircle },
   { id: "you", label: "Profile", icon: UserRound },
@@ -213,7 +227,7 @@ const featureGroups = [
         MessageCircle,
       ],
       [
-        "Explore by intention",
+        "Discover by intention",
         "Serious, new in town, travel, culture and more.",
         Compass,
       ],
@@ -283,7 +297,14 @@ function MobileScreen({
   viewerName,
   profile: initialProfile,
   matched,
+  chatOpen,
   targetLikedYou,
+  introRequest,
+  onSendIntro,
+  onAcceptIntro,
+  onDeclineIntro,
+  messages,
+  onSendMessage,
   activeTab,
   onTab,
   theme,
@@ -309,7 +330,14 @@ function MobileScreen({
   viewerName: string;
   profile: DemoProfile;
   matched: boolean;
+  chatOpen: boolean;
   targetLikedYou: boolean;
+  introRequest: IntroRequest | null;
+  onSendIntro: (from: string, to: string, text: string) => void;
+  onAcceptIntro: () => void;
+  onDeclineIntro: () => void;
+  messages: ChatMessage[];
+  onSendMessage: (sender: string, text: string) => void;
   activeTab: Tab;
   onTab: (tab: Tab) => void;
   theme: Theme;
@@ -331,23 +359,37 @@ function MobileScreen({
   radius: number;
   onRadius: (value: number) => void;
 }) {
-  const dragStart = useRef<number | null>(null);
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const suppressClick = useRef(false);
   const [dragX, setDragX] = useState(0);
+  const [dragY, setDragY] = useState(0);
   const [discoveryIndex, setDiscoveryIndex] = useState(0);
   const [discoveryHistory, setDiscoveryHistory] = useState<number[]>([]);
   const [cardDecision, setCardDecision] = useState<"idle" | "liked" | "passed" | "intro">("idle");
   const [discoverNotice, setDiscoverNotice] = useState("");
   const [messageDraft, setMessageDraft] = useState("");
-  const [messageSent, setMessageSent] = useState(false);
+  const [introComposerOpen, setIntroComposerOpen] = useState(false);
+  const [connectReview, setConnectReview] = useState(false);
+  const [connectPage, setConnectPage] = useState(0);
+  const connectTrackRef = useRef<HTMLDivElement | null>(null);
+  const connectDragRef = useRef({ active: false, moved: false, startX: 0, scrollLeft: 0 });
+  const [introMessage, setIntroMessage] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [selfPreviewOpen, setSelfPreviewOpen] = useState(false);
+  const [selfMediaIndex, setSelfMediaIndex] = useState(0);
   const [editorSection, setEditorSection] = useState<
     "basics" | "story" | "work" | "lifestyle"
   >("basics");
   const [profileNotice, setProfileNotice] = useState("");
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceStep, setVoiceStep] = useState<"matches" | "likes" | "profiles" | "messages" | "reply" | "done">("matches");
+  const [voiceReply, setVoiceReply] = useState("");
+  const [dictatingReply, setDictatingReply] = useState(false);
   const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<VoiceRecognition | null>(null);
+  useEffect(() => () => recognitionRef.current?.abort(), []);
   const [voiceResponse, setVoiceResponse] = useState(
     "Say “brief me” or choose a command below.",
   );
@@ -358,7 +400,26 @@ function MobileScreen({
   const [likesView, setLikesView] = useState<
     "incoming" | "sent" | "favorites"
   >("incoming");
-  const [mayaFavorite, setMayaFavorite] = useState(true);
+  const [favoriteIds, setFavoriteIds] = useState<DemoProfile["id"][]>([
+    initialProfile.id,
+  ]);
+  const [likedProfileIds, setLikedProfileIds] = useState<DemoProfile["id"][]>([]);
+  const [likesLoaded, setLikesLoaded] = useState(false);
+  const [calmMode, setCalmMode] = useState(false);
+  const [preferenceStrength, setPreferenceStrength] = useState<"Must-have" | "Prefer" | "Open-minded">("Prefer");
+  const [safeDateOpen, setSafeDateOpen] = useState(false);
+  const [datePlanSaved, setDatePlanSaved] = useState(false);
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(`mila-liked-${platform}`);
+      if (stored) setLikedProfileIds(JSON.parse(stored));
+    } catch {}
+    setLikesLoaded(true);
+  }, [platform]);
+  useEffect(() => {
+    if (!likesLoaded) return;
+    window.localStorage.setItem(`mila-liked-${platform}`, JSON.stringify(likedProfileIds));
+  }, [likedProfileIds, likesLoaded, platform]);
   const [birthDate, setBirthDate] = useState("1994-10-08");
   const [gender, setGender] = useState("Non-binary");
   const [showGender, setShowGender] = useState(true);
@@ -374,16 +435,94 @@ function MobileScreen({
   const [interests, setInterests] = useState(["Travel", "Films", "Cooking"]);
   const [astrology, setAstrology] = useState(true);
   const [saved, setSaved] = useState(false);
+  const profileSnapshotRef = useRef<{
+    birthDate: string;
+    gender: string;
+    showGender: boolean;
+    height: string;
+    about: string;
+    workTitle: string;
+    education: string;
+    schoolName: string;
+    interests: string[];
+    astrology: boolean;
+  } | null>(null);
   const queue = discoveryProfiles[platform];
   const profile = queue[discoveryIndex] || initialProfile;
+  const isFavorite = favoriteIds.includes(profile.id);
+  const isLiked = likedProfileIds.includes(profile.id);
+  const connectMoments = [
+    ...Array.from({ length: 4 }, (_, index) => ({
+      label: index === 3 ? "Video prompt" : `Photo ${index + 1}`,
+      hint: index === 3 ? "this video" : "this photo",
+    })),
+    { label: "About me", hint: `${profile.name}’s story` },
+    { label: "Looking for", hint: "relationship goals" },
+    { label: "A personal prompt", hint: "this answer" },
+  ];
+  const selectedConnectMoment = connectMoments[connectPage];
+  const showConnectPage = (
+    index: number,
+    behavior: ScrollBehavior = "smooth",
+  ) => {
+    const page = (index + connectMoments.length) % connectMoments.length;
+    setConnectPage(page);
+    const track = connectTrackRef.current;
+    const card = track?.children.item(page) as HTMLElement | null;
+    if (track && card) {
+      track.scrollTo({ left: card.offsetLeft - track.offsetLeft, behavior });
+    }
+  };
+  const receivedIntro = introRequest?.to === viewerName ? introRequest : null;
+  const sentIntro = introRequest?.from === viewerName ? introRequest : null;
+  const connectionPending = sentIntro?.to === profile.name && sentIntro.status === "pending";
+  const conversationPartner = introRequest
+    ? introRequest.from === viewerName
+      ? introRequest.to
+      : introRequest.from
+    : initialProfile.name;
+  const suggestedIntro = `Hi ${profile.name}—I noticed we both enjoy ${profile.tags[0].toLowerCase()}. I’d love to hear what got you into it.`;
   const zodiac = zodiacFor(birthDate);
   const selfProfile = platform === "ios" ? demoProfiles.arjun : demoProfiles.maya;
   const openEditor = (
     section: "basics" | "story" | "work" | "lifestyle" = "basics",
   ) => {
+    if (!profileSnapshotRef.current) {
+      profileSnapshotRef.current = {
+        birthDate,
+        gender,
+        showGender,
+        height,
+        about,
+        workTitle,
+        education,
+        schoolName,
+        interests: [...interests],
+        astrology,
+      };
+    }
+    setSaved(false);
     setEditorSection(section);
     setSelfPreviewOpen(false);
     setEditorOpen(true);
+  };
+  const discardProfileChanges = () => {
+    const snapshot = profileSnapshotRef.current;
+    if (snapshot) {
+      setBirthDate(snapshot.birthDate);
+      setGender(snapshot.gender);
+      setShowGender(snapshot.showGender);
+      setHeight(snapshot.height);
+      setAbout(snapshot.about);
+      setWorkTitle(snapshot.workTitle);
+      setEducation(snapshot.education);
+      setSchoolName(snapshot.schoolName);
+      setInterests(snapshot.interests);
+      setAstrology(snapshot.astrology);
+    }
+    profileSnapshotRef.current = null;
+    setSaved(false);
+    setEditorOpen(false);
   };
   const completeness = Math.min(
     100,
@@ -405,21 +544,32 @@ function MobileScreen({
           ? [...current, item]
           : current,
     );
+  const toggleFavorite = (profileId: DemoProfile["id"] = profile.id) =>
+    setFavoriteIds((current) =>
+      current.includes(profileId)
+        ? current.filter((id) => id !== profileId)
+        : [...current, profileId],
+    );
   const advanceProfile = (action: "liked" | "passed" | "intro" | "next") => {
     const actedOn = profile.name;
+    if (action === "liked") {
+      setLikedProfileIds((current) =>
+        current.includes(profile.id) ? current : [...current, profile.id],
+      );
+    }
     setDiscoveryHistory((items) => [...items, discoveryIndex]);
     if (action !== "next") onDecision(action);
     setCardDecision(action === "next" ? "idle" : action);
     setDiscoverNotice(
       action === "liked" ? `You liked ${actedOn}` :
-      action === "intro" ? `Introduction saved for ${actedOn}` :
+      action === "intro" ? `Introduction sent to ${actedOn}` :
       action === "passed" ? `Passed on ${actedOn}` : `Showing another profile`,
     );
     setTimeout(() => {
       setDiscoveryIndex((current) => (current + 1) % queue.length);
       onMediaIndex(0);
       setCardDecision("idle");
-    }, 260);
+    }, action === "liked" ? 700 : action === "intro" ? 500 : 260);
   };
   const undoProfile = () => {
     const previous = discoveryHistory.at(-1);
@@ -428,19 +578,66 @@ function MobileScreen({
       return;
     }
     setDiscoveryIndex(previous);
+    const previousProfile = queue[previous];
+    if (previousProfile) {
+      setLikedProfileIds((current) => current.filter((id) => id !== previousProfile.id));
+    }
     setDiscoveryHistory((items) => items.slice(0, -1));
     onDecision("idle");
     setCardDecision("idle");
     setDiscoverNotice("Previous profile restored");
   };
   const finishSwipe = () => {
-    if (dragX > 58) advanceProfile("liked");
-    else if (dragX < -58) advanceProfile("passed");
+    const { x, y } = dragOffset.current;
+    const didSwipe = Math.max(Math.abs(x), Math.abs(y)) > 58;
+    suppressClick.current = didSwipe;
+
+    if (Math.abs(y) > Math.abs(x)) {
+      if (y < -58) onProfileOpen(true);
+      else if (y > 58) advanceProfile("next");
+    } else if (x > 58) advanceProfile("liked");
+    else if (x < -58) advanceProfile("passed");
+
+    dragOffset.current = { x: 0, y: 0 };
     setDragX(0);
+    setDragY(0);
     dragStart.current = null;
+
+    if (didSwipe) {
+      window.setTimeout(() => {
+        suppressClick.current = false;
+      }, 0);
+    }
   };
   const cycleRadius = () =>
     onRadius(radius === 5 ? 10 : radius === 10 ? 25 : 5);
+  const openExploreFeed = (label: string) => {
+    setDiscoveryIndex(0);
+    onMediaIndex(0);
+    setDiscoverNotice(`${label} selected · Showing your best matches`);
+    onTab("discover");
+  };
+  const startIntroduction = () => {
+    setIntroMessage(suggestedIntro);
+    setConnectReview(true);
+    setConnectPage(mediaIndex);
+    setIntroComposerOpen(true);
+    window.requestAnimationFrame(() => showConnectPage(mediaIndex, "auto"));
+  };
+  const sendIntroduction = () => {
+    const text = introMessage.trim();
+    if (!text) return;
+    onSendIntro(
+      viewerName,
+      profile.name,
+      connectReview ? `${selectedConnectMoment.label}: ${text}` : text,
+    );
+    setIntroComposerOpen(false);
+    setIntroSent(true);
+    if (connectReview) onProfileOpen(false);
+    setConnectReview(false);
+    advanceProfile("intro");
+  };
   const shareProfile = () => {
     setProfileNotice(`${profile.name}’s profile link is ready to share`);
     onSafetyOpen(false);
@@ -465,17 +662,58 @@ function MobileScreen({
     setVoiceResponse(text);
     speak(text);
   };
+  const beginVoice = () => {
+    setVoiceOpen(true);
+    setVoiceStep("matches");
+    setDictatingReply(false);
+    setVoiceReply("");
+    answerVoice(`Hi ${viewerName}. Would you like me to read your matched profiles today? Say yes, or skip to likes.`);
+  };
+  const guideVoice = (skip = false) => {
+    if (voiceStep === "matches") {
+      setVoiceStep("likes");
+      const person = Object.values(demoProfiles).find(item => item.name === conversationPartner);
+      answerVoice(`${skip ? "" : chatOpen ? `You are connected with ${conversationPartner}. ${person ? `${person.age}, ${person.job}, in ${person.city}. ${person.about}` : "Your conversation is open."}` : "No mutual matches in this preview yet."} Would you like me to go over your likes?`);
+    } else if (voiceStep === "likes") {
+      setVoiceStep("profiles");
+      answerVoice(`${skip ? "" : `${targetLikedYou ? `${initialProfile.name} liked you. ` : "No new reciprocal likes in this demo session. "}${receivedIntro?.status === "pending" ? `${receivedIntro.from} also sent an introduction. ` : ""}`} Would you like to hear a profile from today's demo list?`);
+    } else if (voiceStep === "profiles") {
+      if (skip) {
+        setVoiceStep("messages");
+        answerVoice("Would you like me to read your messages aloud? Only continue if you are comfortable hearing them here.");
+      } else {
+        answerVoice(`${profile.name}, ${profile.age}. ${profile.job}, in ${profile.city}, ${profile.distance} miles away. ${profile.about} Would you like to like this profile, draft an introduction, hear the next profile, or go to messages?`);
+      }
+    } else if (voiceStep === "messages") {
+      const incoming = messages.filter(message => message.sender !== viewerName);
+      setVoiceStep(!skip && chatOpen && incoming.length ? "reply" : "done");
+      answerVoice(skip ? "All done. You can restart your briefing whenever you like." : !chatOpen || !incoming.length ? "You have no received messages in this demo conversation. You're all caught up." : `${incoming.slice(-3).map(message => `${message.sender} says: ${message.text}`).join(" ")} Would you like to reply to ${conversationPartner}?`);
+    } else if (voiceStep === "reply") {
+      if (skip) { setVoiceStep("done"); setDictatingReply(false); answerVoice("No reply sent. You're all caught up."); }
+      else { setDictatingReply(true); answerVoice(`What would you like to say to ${conversationPartner}? Tap the microphone to dictate, or type below. I'll show the draft before you send it.`); }
+    } else beginVoice();
+  };
   const runVoiceCommand = (command: string) => {
-    const words = command.toLowerCase();
+    const words = command.toLowerCase().trim();
+    if (words === "stop" || words === "pause") { window.speechSynthesis?.cancel(); setDictatingReply(false); return; }
+    if (dictatingReply) { setVoiceReply(command); setDictatingReply(false); answerVoice(`Your reply draft is: ${command}. Review it below, then tap Confirm and send reply.`); return; }
+    if (["yes", "yes please", "continue", "read them", "read matches", "read likes", "read profile", "read messages", "reply"].includes(words)) { guideVoice(); return; }
+    if (["no", "no thanks", "skip"].includes(words)) { guideVoice(true); return; }
+    if (words.includes("restart")) { beginVoice(); return; }
+    if (words.includes("messages")) { setVoiceStep("messages"); answerVoice("Would you like me to read your messages aloud? Say yes or skip."); return; }
+    if (words.includes("skip to likes")) { setVoiceStep("likes"); answerVoice("Would you like me to go over your likes?"); return; }
+    if (words.includes("next profile")) { setDiscoveryIndex((discoveryIndex + 1) % queue.length); onMediaIndex(0); const next = queue[(discoveryIndex + 1) % queue.length]; answerVoice(`${next.name}, ${next.age}. ${next.job}, in ${next.city}. ${next.about} Say like this profile, draft an intro, next profile, or messages.`); return; }
     if (words.includes("brief")) {
       answerVoice(
-        `Good evening ${viewerName}. ${matched ? `You matched with ${profile.name}, and your chat is ready.` : targetLikedYou ? `${profile.name} liked you. Like them back to open chat.` : `You have three new likes. ${profile.name} is today’s strongest recommendation.`}`,
+        `Good evening ${viewerName}. ${chatOpen ? `You connected with ${conversationPartner}, and your chat is ready.` : targetLikedYou ? `${profile.name} liked you. Like them back to open chat.` : `You have three new likes. ${profile.name} is today’s strongest recommendation.`}`,
       );
     } else if (words.includes("next")) {
       onMediaIndex((mediaIndex + 1) % 4);
       answerVoice(`Showing the next ${profile.name} photo.`);
     } else if (words.includes("favorite") || words.includes("save")) {
-      setMayaFavorite(true);
+      setFavoriteIds((current) =>
+        current.includes(profile.id) ? current : [...current, profile.id],
+      );
       answerVoice(`${profile.name} is saved privately to Favorites.`);
     } else if (words.includes("like")) {
       advanceProfile("liked");
@@ -492,6 +730,12 @@ function MobileScreen({
     }
   };
   const startListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
+      recognitionRef.current = null;
+      setListening(false);
+      return;
+    }
     const voiceWindow = window as typeof window & {
       SpeechRecognition?: new () => VoiceRecognition;
       webkitSpeechRecognition?: new () => VoiceRecognition;
@@ -503,14 +747,21 @@ function MobileScreen({
       return;
     }
     const recognition = new Recognition();
+    recognitionRef.current = recognition;
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.continuous = false;
     recognition.onresult = (event) => runVoiceCommand(event.results[0][0].transcript);
     recognition.onerror = () => answerVoice("I could not hear that. Please try again or tap a command.");
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => { setListening(false); recognitionRef.current = null; };
     setListening(true);
-    recognition.start();
+    try {
+      window.speechSynthesis?.cancel();
+      recognition.start();
+    } catch {
+      setListening(false);
+      answerVoice("Microphone could not start. Try again or use the tap commands below.");
+    }
   };
   return (
     <div className={`device-column ${platform}`}>
@@ -538,26 +789,19 @@ function MobileScreen({
             <button aria-label="Search">
               <Search />
             </button>
-            <button aria-label="Settings">
+            <button aria-label="Settings" onClick={() => onTab("you")}>
               <Settings2 />
             </button>
           </div>
           <div className="screen-content">
             {activeTab === "discover" && (
               <div className="discover-screen">
-                <div className="discovery-title">
-                  <span>
-                    <LocateFixed /> Nearby · {queue.length} profiles
-                  </span>
-                  <button onClick={cycleRadius}>
-                    Within {radius} mi <ChevronDown />
-                  </button>
-                </div>
-                <div className="profile-progress">
-                  <span>{discoveryIndex + 1} of {queue.length}</span>
-                  <i><b style={{width: `${((discoveryIndex + 1) / queue.length) * 100}%`}} /></i>
-                </div>
                 {discoverNotice && <div className="discover-notice" role="status"><Check /> {discoverNotice}</div>}
+                <div className="today-bar" aria-label="Today at a glance">
+                  <span><Sparkles /><b>Today</b><small>{calmMode ? "1 calm pick" : `${queue.length} picks`}</small></span>
+                  <button onClick={() => onTab("likes")}><Heart /> Likes</button>
+                  <button onClick={() => onTab("chats")}><MessageCircle /> Messages</button>
+                </div>
                 {blocked ? (
                   <div className="blocked-state">
                     <span>
@@ -570,25 +814,39 @@ function MobileScreen({
                 ) : (
                   <>
                   <article
-                      className={`profile-card card-${cardDecision} ${dragX !== 0 ? "is-dragging" : ""}`}
+                      className={`profile-card card-${cardDecision} ${dragX !== 0 || dragY !== 0 ? "is-dragging" : ""}`}
                       style={
-                        dragX
+                        dragX || dragY
                           ? {
-                              transform: `translateX(${dragX}px) rotate(${dragX / 20}deg)`,
+                              transform: `translate3d(${dragX}px, ${dragY}px, 0) rotate(${dragX / 20}deg)`,
                             }
                           : undefined
                       }
                       onPointerDown={(e) => {
-                        if ((e.target as HTMLElement).closest("button")) return;
-                        dragStart.current = e.clientX;
-                        e.currentTarget.setPointerCapture(e.pointerId);
+                        if (!e.isPrimary) return;
+                        dragStart.current = { x: e.clientX, y: e.clientY };
+                        dragOffset.current = { x: 0, y: 0 };
+                        (e.target as Element).setPointerCapture(e.pointerId);
                       }}
                       onPointerMove={(e) => {
-                        if (dragStart.current !== null)
-                          setDragX(e.clientX - dragStart.current);
+                        if (dragStart.current !== null) {
+                          const nextOffset = {
+                            x: e.clientX - dragStart.current.x,
+                            y: e.clientY - dragStart.current.y,
+                          };
+                          dragOffset.current = nextOffset;
+                          setDragX(nextOffset.x);
+                          setDragY(nextOffset.y);
+                        }
                       }}
                       onPointerUp={finishSwipe}
                       onPointerCancel={finishSwipe}
+                      onClickCapture={(e) => {
+                        if (!suppressClick.current) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        suppressClick.current = false;
+                      }}
                     >
                     <div className={`profile-image profile-${profile.id} media-${mediaIndex}`}>
                         <div className="story-dots">
@@ -598,6 +856,14 @@ function MobileScreen({
                               className={mediaIndex === i ? "active" : ""}
                             />
                           ))}
+                        </div>
+                        <div className="nearby-on-photo">
+                          <span>
+                            <LocateFixed /> Nearby · {queue.length} profiles
+                          </span>
+                          <button onClick={cycleRadius}>
+                            Within {radius} mi <ChevronDown />
+                          </button>
                         </div>
                         <span className="verified-pill">
                           <BadgeCheck /> Verified
@@ -646,66 +912,150 @@ function MobileScreen({
                           <button
                             className="view-profile"
                             onClick={() => onProfileOpen(true)}
+                            aria-label={`View ${profile.name}'s full profile`}
+                            title={`View ${profile.name}'s full profile`}
                           >
-                      Get to know {profile.name} <ChevronDown />
+                            <ChevronUp />
+                          </button>
+                        </div>
+                        <div className="swipe-actions overlay-actions">
+                          <button aria-label="Pass" onClick={() => advanceProfile("passed")}>
+                            <X />
+                          </button>
+                          <button aria-label="Undo" onClick={undoProfile}>
+                            <RotateCcw />
+                          </button>
+                          <button
+                            className="priority"
+                            aria-label={`Send intro to ${profile.name}`}
+                            onClick={startIntroduction}
+                          >
+                            <Star />
+                            <span>Send intro</span>
+                          </button>
+                          <button
+                            className={`like ${isLiked ? "is-liked" : ""}`}
+                            aria-label={isLiked ? `${profile.name} liked` : `Like ${profile.name}`}
+                            aria-pressed={isLiked}
+                            disabled={isLiked}
+                            onClick={() => advanceProfile("liked")}
+                          >
+                            <Heart fill={isLiked ? "currentColor" : "none"} />
                           </button>
                         </div>
                       </div>
-                      <button className="match-reason" onClick={onReason}>
-                        <span>
-                          <Sparkles />
-                          <b>Why Mila picked {profile.name}</b>
-                        </span>
-                        <ChevronDown />
-                      </button>
-                      {showReason && (
-                        <div className="reason-panel">
-                          <span>
-                            <Check /> Same relationship goal
-                          </span>
-                          <span>
-                            <Check /> Similar social energy
-                          </span>
-                          <span>
-                            <Check /> Both open to relocating
-                          </span>
-                        </div>
-                      )}
                     </article>
-                    <div className="swipe-actions">
-                      <button
-                        aria-label="Pass"
-                        onClick={() => advanceProfile("passed")}
-                      >
-                        <X />
-                      </button>
-                      <button
-                        aria-label="Undo"
-                        onClick={undoProfile}
-                      >
-                        <RotateCcw />
-                      </button>
-                      <button
-                        className="priority"
-                        aria-label="Meaningful intro"
-                        onClick={() => advanceProfile("intro")}
-                      >
-                        <Star />
-                      </button>
-                      <button
-                        className="like"
-                        aria-label="Like"
-                        onClick={() => advanceProfile("liked")}
-                      >
-                        <Heart />
-                      </button>
-                    </div>
-                    <div className="swipe-hint">
-                      <span>Pass</span>
-                      <span>Meaningful intro</span>
-                      <span>Like</span>
-                    </div>
-                    <button className="next-profile" onClick={() => advanceProfile("next")}>Next profile <ChevronDown /></button>
+                    {introComposerOpen && (
+                      <div className={`intro-composer ${connectReview ? "connect-review" : ""}`} role="dialog" aria-modal="true" aria-labelledby={`${platform}-intro-title`}>
+                        {connectReview && <button className="connect-close" onClick={() => { setIntroComposerOpen(false); setConnectReview(false); }} aria-label="Close connection composer"><X /></button>}
+                        <span className={`intro-avatar profile-${profile.id}`} />
+                        <div>
+                          <small>{connectReview ? "First impression" : "Meaningful introduction"}</small>
+                          <h3 id={`${platform}-intro-title`}>{connectReview ? `Connect with ${profile.name}` : `Message ${profile.name}`}</h3>
+                          <p>{connectReview ? `Tap for the next page, or swipe and drag through ${profile.name}’s profile.` : `${profile.name} can read this before deciding whether to connect.`}</p>
+                        </div>
+                        {connectReview && <>
+                          <div className="connect-pager">
+                            <div className="connect-page-head">
+                              <span>{selectedConnectMoment.label}</span>
+                              <b>{connectPage + 1}/{connectMoments.length}</b>
+                            </div>
+                            <div
+                              className="connect-page-track"
+                              ref={connectTrackRef}
+                              aria-label={`${profile.name}'s profile pages`}
+                              onPointerDown={(event) => {
+                                connectDragRef.current = {
+                                  active: event.pointerType === "mouse",
+                                  moved: false,
+                                  startX: event.clientX,
+                                  scrollLeft: event.currentTarget.scrollLeft,
+                                };
+                                if (event.pointerType === "mouse") event.currentTarget.setPointerCapture(event.pointerId);
+                              }}
+                              onPointerMove={(event) => {
+                                if (Math.abs(event.clientX - connectDragRef.current.startX) > 8) connectDragRef.current.moved = true;
+                                if (!connectDragRef.current.active) return;
+                                event.currentTarget.scrollLeft = connectDragRef.current.scrollLeft - (event.clientX - connectDragRef.current.startX);
+                              }}
+                              onPointerUp={(event) => {
+                                connectDragRef.current.active = false;
+                                if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+                                const track = event.currentTarget;
+                                const center = track.scrollLeft + track.clientWidth / 2;
+                                const pages = Array.from(track.children) as HTMLElement[];
+                                const nearest = pages.reduce((best, page, index) => {
+                                  const distance = Math.abs(page.offsetLeft + page.offsetWidth / 2 - center);
+                                  return distance < best.distance ? { index, distance } : best;
+                                }, { index: 0, distance: Number.POSITIVE_INFINITY });
+                                showConnectPage(nearest.index);
+                              }}
+                              onPointerCancel={() => { connectDragRef.current.active = false; }}
+                              onClick={(event) => {
+                                if ((event.target as HTMLElement).closest("button, input, textarea, a")) return;
+                                if (connectDragRef.current.moved) {
+                                  connectDragRef.current.moved = false;
+                                  return;
+                                }
+                                showConnectPage(connectPage + 1);
+                              }}
+                              onScroll={(event) => {
+                                const track = event.currentTarget;
+                                const center = track.scrollLeft + track.clientWidth / 2;
+                                const pages = Array.from(track.children) as HTMLElement[];
+                                const nearest = pages.reduce((best, page, index) => {
+                                  const distance = Math.abs(page.offsetLeft + page.offsetWidth / 2 - center);
+                                  return distance < best.distance ? { index, distance } : best;
+                                }, { index: 0, distance: Number.POSITIVE_INFINITY });
+                                if (nearest.index !== connectPage) setConnectPage(nearest.index);
+                              }}
+                            >
+                              {connectMoments.map((moment, index) => (
+                                <article
+                                  key={moment.label}
+                                  className={`connect-page connect-page-${index} ${index < 4 ? `connect-page-media profile-${profile.id} media-${index}` : ""}`}
+                                  aria-label={`${moment.label}, page ${index + 1} of ${connectMoments.length}`}
+                                >
+                                  {index < 4 && <div>{index === 3 && <Play className="connect-video-icon" fill="currentColor" />}<b>{profile.name}, {profile.age}</b><small>{index === 3 ? "Video prompt · tap for the next page" : "Tap for next · or swipe"}</small></div>}
+                                  {index === 4 && <><h4>About {profile.name}</h4><p>{profile.about}</p></>}
+                                  {index === 5 && <><h4>Looking for</h4><strong>Long-term relationship</strong><p>Marriage-minded · Open to children · Open to relocation</p></>}
+                                  {index === 6 && <><h4>A personal prompt</h4><blockquote>“{profile.prompt}”</blockquote><div className="connect-tags">{profile.tags.map(tag => <span key={tag}>{tag}</span>)}</div></>}
+                                </article>
+                              ))}
+                            </div>
+                            <div
+                              className="connect-progress"
+                              role="progressbar"
+                              aria-label="Profile page progress"
+                              aria-valuemin={1}
+                              aria-valuemax={connectMoments.length}
+                              aria-valuenow={connectPage + 1}
+                            >
+                              {connectMoments.map((moment, index) => <span key={moment.label} className={connectPage === index ? "is-active" : ""} />)}
+                            </div>
+                          </div>
+                          <div className="connection-includes">
+                            <span className={`connection-owner profile-${selfProfile.id} media-0`} />
+                            <span><b>Your complete Mila profile is included</b><small>Photos and video · About · Interests · Lifestyle</small></span>
+                            <Check />
+                          </div>
+                        </>}
+                        <Textarea
+                          value={introMessage}
+                          onChange={(event) => setIntroMessage(event.target.value)}
+                          aria-label={`Introduction to ${profile.name}`}
+                          placeholder={connectReview ? `Write about ${selectedConnectMoment.hint}…` : undefined}
+                          maxLength={240}
+                        />
+                        <small className="intro-count">{introMessage.length}/240</small>
+                        <div className="intro-compose-actions">
+                          <button onClick={() => { setIntroComposerOpen(false); setConnectReview(false); }}>Cancel</button>
+                          <button disabled={!introMessage.trim()} onClick={sendIntroduction}>
+                            <Send /> {connectReview ? "Send connection" : "Send introduction"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
                 {matched && (
@@ -723,39 +1073,39 @@ function MobileScreen({
             )}
             {activeTab === "explore" && (
               <div className="inner-screen">
-                <span className="screen-kicker">Explore</span>
+                <span className="screen-kicker">Discover</span>
                 <h2>Date with intention.</h2>
                 <p>Choose a space that matches what you want today.</p>
                 <div className="explore-grid">
-                  <button className="wide">
+                  <button className="wide" onClick={() => openExploreFeed("Ready for real")}>
                     <Heart />
                     <span>
                       <b>Ready for real</b>
                       <small>Long-term connections</small>
                     </span>
                   </button>
-                  <button>
+                  <button onClick={() => openExploreFeed("New in town")}>
                     <MapPin />
                     <span>
                       <b>New in town</b>
                       <small>Meet nearby</small>
                     </span>
                   </button>
-                  <button>
+                  <button onClick={() => openExploreFeed("Across borders")}>
                     <Globe2 />
                     <span>
                       <b>Across borders</b>
                       <small>Open to distance</small>
                     </span>
                   </button>
-                  <button>
+                  <button onClick={() => openExploreFeed("Free tonight")}>
                     <Zap />
                     <span>
                       <b>Free tonight</b>
                       <small>Spontaneous plans</small>
                     </span>
                   </button>
-                  <button>
+                  <button onClick={() => openExploreFeed("Culture & roots")}>
                     <UsersRound />
                     <span>
                       <b>Culture & roots</b>
@@ -768,30 +1118,56 @@ function MobileScreen({
             {activeTab === "likes" && (
               <div className="inner-screen likes-screen">
                 <span className="screen-kicker">Connections</span>
-                <h2>Your likes, clearly.</h2>
-                <p>See incoming likes, likes you sent, and private favorites.</p>
+                <h2>Likes</h2>
+                <p>A little interest. A new possibility.</p>
                 <div className="likes-tabs" aria-label="Likes views">
                   <button
                     onClick={() => setLikesView("incoming")}
                     aria-pressed={likesView === "incoming"}
                   >
-                    Liked you <i>{targetLikedYou ? 4 : 3}</i>
+                    Requests <i>{receivedIntro?.status === "pending" ? 1 : 0}</i>
                   </button>
                   <button
                     onClick={() => setLikesView("sent")}
                     aria-pressed={likesView === "sent"}
                   >
-                    You liked <i>{decision === "liked" ? 2 : 1}</i>
+                    Sent <i>{likedProfileIds.length + (sentIntro ? 1 : 0)}</i>
                   </button>
                   <button
                     onClick={() => setLikesView("favorites")}
                     aria-pressed={likesView === "favorites"}
                   >
-                    Favorites <i>{mayaFavorite ? 1 : 0}</i>
+                    Saved <i>{favoriteIds.length}</i>
                   </button>
                 </div>
                 {likesView === "incoming" && (
                   <div className="likes-list">
+                    {receivedIntro?.status === "pending" && (
+                      <article className="intro-request-card">
+                        <header>
+                          <span className={`like-avatar target-mini profile-${initialProfile.id}`}>{receivedIntro.from[0]}</span>
+                          <span>
+                            <b>{receivedIntro.from} sent an introduction</b>
+                            <small>Only accept if you want to start chatting.</small>
+                          </span>
+                        </header>
+                        <blockquote>“{receivedIntro.text}”</blockquote>
+                        <div>
+                          <button onClick={onDeclineIntro}>Decline</button>
+                          <button onClick={() => { onAcceptIntro(); onTab("chats"); }}>
+                            <Check /> Accept &amp; chat
+                          </button>
+                        </div>
+                      </article>
+                    )}
+                    {receivedIntro?.status === "accepted" && (
+                      <button className="accepted-request" onClick={() => onTab("chats")}>
+                        <Check /> Connected with {receivedIntro.from} · Open chat
+                      </button>
+                    )}
+                    {receivedIntro?.status === "declined" && (
+                      <div className="request-empty">Introduction declined. No chat was opened.</div>
+                    )}
                     {targetLikedYou && (
                       <button className="like-person incoming-target">
                         <span className={`like-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
@@ -802,43 +1178,45 @@ function MobileScreen({
                         <em>{matched ? "Matched" : "New"}</em>
                       </button>
                     )}
-                    {[
-                      ["P", "Priya, 31", "Queens · 6 mi", "New"],
-                      ["D", "Daniel, 30", "Manhattan · 4 mi", "Today"],
-                      ["E", "Elena, 28", "Jersey City · 8 mi", "Yesterday"],
-                    ].map(([initial, name, meta, time], index) => (
-                      <button className="like-person" key={name}>
-                        <span className={`like-avatar tone-${index}`}>{initial}</span>
-                        <span>
-                          <b>{name}</b>
-                          <small>{meta}</small>
-                        </span>
-                        <em>{time}</em>
-                      </button>
-                    ))}
+                    <div className="people-photo-grid">
+                      {queue.map((person, index) => (
+                        <button className={`people-photo profile-${person.id} media-0`} key={person.id}
+                          onClick={() => { setDiscoveryIndex(index); onMediaIndex(0); onProfileOpen(true); }}
+                          aria-label={`View ${person.name}'s profile`}>
+                          <span className="people-photo-copy"><b>{person.name}, {person.age}</b><small>{person.city} · {person.distance} mi</small></span>
+                          <span className="people-photo-open"><ArrowLeft /></span>
+                        </button>
+                      ))}
+                    </div>
                     <small className="likes-note">
-                      Like someone back to create a match and start chatting.
+                      Introductions stay private until you accept. Likes still require a mutual match.
                     </small>
                   </div>
                 )}
                 {likesView === "sent" && (
                   <div className="likes-list">
-                    {decision === "liked" && (
-                      <div className="like-person">
-                        <span className={`like-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
+                    {sentIntro && (
+                      <article className="sent-intro-card">
+                        <span className={`like-avatar target-mini profile-${initialProfile.id}`}>{sentIntro.to[0]}</span>
                         <span>
-                          <b>{profile.name}, {profile.age}</b>
-                          <small>Liked just now · Awaiting response</small>
+                          <b>Introduction to {sentIntro.to}</b>
+                          <small>{sentIntro.status === "pending" ? "Waiting for a response" : sentIntro.status === "accepted" ? "Accepted · Chat is open" : "Declined"}</small>
                         </span>
-                        <button
-                          className="save-person"
-                          onClick={() => setMayaFavorite(!mayaFavorite)}
-                          aria-label={mayaFavorite ? `Remove ${profile.name} from favorites` : `Save ${profile.name} to favorites`}
-                        >
-                          <Bookmark fill={mayaFavorite ? "currentColor" : "none"} />
-                        </button>
-                      </div>
+                        <em>{sentIntro.status}</em>
+                      </article>
                     )}
+                    {likedProfileIds.map((profileId) => {
+                      const likedProfile = demoProfiles[profileId];
+                      const savedLikedProfile = favoriteIds.includes(profileId);
+                      return <div className="like-person" key={profileId}>
+                        <span className={`like-avatar target-mini profile-${profileId}`}>{likedProfile.name[0]}</span>
+                        <span><b>{likedProfile.name}, {likedProfile.age}</b><small>Liked just now · Awaiting response</small></span>
+                        <button className="save-person" onClick={() => toggleFavorite(profileId)}
+                          aria-label={savedLikedProfile ? `Remove ${likedProfile.name} from favorites` : `Save ${likedProfile.name} to favorites`}>
+                          <Bookmark fill={savedLikedProfile ? "currentColor" : "none"} />
+                        </button>
+                      </div>;
+                    })}
                     <div className="like-person">
                       <span className="like-avatar tone-1">J</span>
                       <span>
@@ -856,21 +1234,17 @@ function MobileScreen({
                 )}
                 {likesView === "favorites" && (
                   <div className="likes-list">
-                    {mayaFavorite ? (
-                      <div className="like-person">
-                        <span className={`like-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
-                        <span>
-                          <b>{profile.name}, {profile.age}</b>
-                          <small>Saved privately · {profile.city}</small>
-                        </span>
-                        <button
-                          className="save-person"
-                          onClick={() => setMayaFavorite(false)}
-                          aria-label={`Remove ${profile.name} from favorites`}
-                        >
-                          <Bookmark fill="currentColor" />
-                        </button>
-                      </div>
+                    {favoriteIds.length ? (
+                      favoriteIds.map((profileId) => {
+                        const favoriteProfile = demoProfiles[profileId];
+                        return <div className="like-person" key={profileId}>
+                          <span className={`like-avatar target-mini profile-${profileId}`}>{favoriteProfile.name[0]}</span>
+                          <span><b>{favoriteProfile.name}, {favoriteProfile.age}</b><small>Saved privately · {favoriteProfile.city}</small></span>
+                          <button className="save-person" onClick={() => toggleFavorite(profileId)} aria-label={`Remove ${favoriteProfile.name} from favorites`}>
+                            <Bookmark fill="currentColor" />
+                          </button>
+                        </div>;
+                      })
                     ) : (
                       <div className="likes-empty">
                         <Bookmark />
@@ -888,26 +1262,52 @@ function MobileScreen({
             {activeTab === "chats" && (
               <div className="inner-screen">
                 <span className="screen-kicker">Messages</span>
-                <h2>Good conversations.</h2>
+                <h2>Chats</h2>
+                <h3 className="section-title">New connections</h3>
                 <div className="new-matches">
                   <span className={`mini-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
                   <span className="mini-avatar alt">A</span>
-                  <button>
+                  <button onClick={() => onTab("likes")} aria-label="View new connections">
                     <Heart /> New match
                   </button>
                 </div>
-                {matched ? (
+                {chatOpen ? (
                   <>
                     <div className="chat-row new-match-chat">
                       <span className={`chat-avatar target-mini profile-${initialProfile.id}`}>{initialProfile.name[0]}</span>
-                      <div><b>{initialProfile.name} <BadgeCheck /></b><small>{messageSent ? `You: ${messageDraft}` : "You matched — say hello!"}</small></div>
+                      <div><b>{conversationPartner} <BadgeCheck /></b><small>Connected · Messages are now open</small></div>
                       <time>Now</time>
                     </div>
-                    <div className="quick-message">
-                      <Input value={messageDraft} onChange={(event) => {setMessageDraft(event.target.value); setMessageSent(false);}} placeholder={`Message ${initialProfile.name}…`} aria-label={`Message ${initialProfile.name}`} />
-                      <button disabled={!messageDraft.trim()} onClick={() => setMessageSent(true)} aria-label="Send message"><Send /></button>
+                    <div className="chat-thread" aria-label={`Conversation with ${conversationPartner}`}>
+                      {messages.map((message) => (
+                        <div key={message.id} className={`chat-bubble ${message.sender === viewerName ? "is-mine" : "is-theirs"}`}>
+                          <small>{message.sender === viewerName ? "You" : message.sender}</small>
+                          <p>{message.text}</p>
+                        </div>
+                      ))}
                     </div>
-                    {messageSent && <small className="message-confirm"><Check /> Message sent</small>}
+                    <div className="quick-message">
+                      <Input
+                        value={messageDraft}
+                        onChange={(event) => setMessageDraft(event.target.value)}
+                        placeholder={`Message ${conversationPartner}…`}
+                        aria-label={`Message ${conversationPartner}`}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" && messageDraft.trim()) {
+                            onSendMessage(viewerName, messageDraft.trim());
+                            setMessageDraft("");
+                          }
+                        }}
+                      />
+                      <button
+                        disabled={!messageDraft.trim()}
+                        onClick={() => {
+                          onSendMessage(viewerName, messageDraft.trim());
+                          setMessageDraft("");
+                        }}
+                        aria-label="Send message"
+                      ><Send /></button>
+                    </div>
                   </>
                 ) : (
                   <div className="chat-lock">
@@ -931,21 +1331,45 @@ function MobileScreen({
                       Ask Mila for an opener based on shared interests.
                     </span>
                   </div>
-                  <button aria-label="Try copilot">
+                  <button
+                    aria-label="Try copilot"
+                    onClick={() => setMessageDraft(`What first got you interested in ${profile.tags[0].toLowerCase()}?`)}
+                  >
                     <Send />
                   </button>
                 </div>
+                {chatOpen && (
+                  <div className="safe-date-card">
+                    <ShieldCheck />
+                    <span><b>Plan a safer first date</b><small>Public place · Share plan · Check in</small></span>
+                    <button onClick={() => setSafeDateOpen(!safeDateOpen)}>{safeDateOpen ? "Close" : "Plan"}</button>
+                    {safeDateOpen && (
+                      <div className="safe-date-plan">
+                        <p><Check /> Meet at a busy public café</p>
+                        <p><Check /> Share time and place with a trusted contact</p>
+                        <p><Check /> Schedule a private check-in</p>
+                        <button onClick={() => setDatePlanSaved(true)}>{datePlanSaved ? "Plan saved" : "Save date plan"}</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             {activeTab === "you" && (
               <div className="inner-screen you-screen">
-                <span className="screen-kicker">Your profile</span>
-                <h2>Be clear. Be yourself.</h2>
-                <p>Preview exactly what people see, then edit one section at a time.</p>
+                <span className="screen-kicker">Your space</span>
+                <h2>My profile</h2>
+                <p>Keep your story current.</p>
                 <div className={`owner-card profile-${selfProfile.id} media-0`}>
                   <div className="owner-card-shade" />
                   <span className="owner-score">{completeness}% complete</span>
+                  <button className="owner-edit-button" onClick={() => openEditor("basics")}>
+                    <Pencil /> Edit
+                  </button>
                   <div className="owner-card-copy">
+                    <button className="owner-preview-button" onClick={() => setSelfPreviewOpen(true)}>
+                      <Eye /> Preview
+                    </button>
                     <div>
                       <b>{viewerName}, {selfProfile.age}</b>
                       <BadgeCheck />
@@ -953,13 +1377,21 @@ function MobileScreen({
                     <small>{workTitle || "Add your work"} · {selfProfile.city}</small>
                   </div>
                 </div>
-                <div className="owner-actions">
-                  <button onClick={() => setSelfPreviewOpen(true)}>
-                    <Eye /> Preview profile
-                  </button>
-                  <button onClick={() => openEditor("basics")}>
-                    <Pencil /> Edit profile
-                  </button>
+                <div className="profile-quick-links">
+                  <button onClick={() => openEditor("basics")}><Ruler /> Height</button>
+                  <button onClick={() => openEditor("work")}><BriefcaseBusiness /> Work</button>
+                  <button onClick={() => openEditor("work")}><GraduationCap /> Education</button>
+                  <button onClick={() => openEditor("lifestyle")}><Heart /> Lifestyle</button>
+                </div>
+                <div className="profile-media-heading"><h3>My photos</h3><span>3 photos · 1 video preview</span></div>
+                <div className="owner-photo-strip">
+                  {[0, 1, 2, 3].map(index => (
+                    <button key={index} className={`profile-${selfProfile.id} media-${index}`}
+                      onClick={() => { setSelfMediaIndex(index); setSelfPreviewOpen(true); }}
+                      aria-label={index === 3 ? "Preview my video" : `Preview my photo ${index + 1}`}>
+                      {index === 3 ? <Play /> : <span>{index + 1}</span>}
+                    </button>
+                  ))}
                 </div>
                 <div className="profile-section-list">
                   <button onClick={() => openEditor("basics")}>
@@ -972,7 +1404,7 @@ function MobileScreen({
                     <BriefcaseBusiness /><span><b>Work &amp; education</b><small>Title, degree and school</small></span><strong>Complete</strong>
                   </button>
                   <button onClick={() => openEditor("lifestyle")}>
-                    <Heart /><span><b>Dating &amp; lifestyle</b><small>Intent, family plans and habits</small></span><strong className="add-detail">Add details</strong>
+                    <Heart /><span><b>Dating &amp; lifestyle</b><small>Intent, family plans and habits</small></span><strong>Complete</strong>
                   </button>
                 </div>
                 <div
@@ -984,7 +1416,7 @@ function MobileScreen({
                     <small>
                       {hidden
                         ? "Hidden from new people. Matches can still chat."
-                        : "Stop appearing in Discover without losing matches."}
+                        : "Stop appearing in Match without losing matches."}
                     </small>
                   </span>
                   <Switch
@@ -993,6 +1425,11 @@ function MobileScreen({
                     onCheckedChange={onHidden}
                     aria-label="Hide my profile"
                   />
+                </div>
+                <div className="calm-mode-card">
+                  <Sparkles />
+                  <span><b>Calm Mode</b><small>{calmMode ? "One thoughtful recommendation each day" : "Choose a smaller daily set of profiles"}</small></span>
+                  <Switch size="sm" checked={calmMode} onCheckedChange={setCalmMode} aria-label="Calm Mode" />
                 </div>
                 <h3>Choose your look</h3>
                 <div className="in-app-themes">
@@ -1030,15 +1467,19 @@ function MobileScreen({
           {profileOpen && (
             <section className="full-profile">
               <div className={`full-profile-hero profile-${profile.id} media-${mediaIndex}`}>
+                <div className="story-dots" aria-label={`${mediaIndex + 1} of 4 media items`}>
+                  {[0, 1, 2, 3].map((index) => <i key={index} className={mediaIndex === index ? "active" : ""} />)}
+                </div>
                 <button
                   className="profile-back"
                   onClick={() => {
                     onProfileOpen(false);
                     onSafetyOpen(false);
                   }}
-                  aria-label="Back"
+                  aria-label="Close full profile"
+                  title="Close full profile"
                 >
-                  <ArrowLeft />
+                  <ChevronDown />
                 </button>
                 <button
                   className="profile-more"
@@ -1046,6 +1487,15 @@ function MobileScreen({
                   aria-label="Safety options"
                 >
                   <MoreHorizontal />
+                </button>
+                <button
+                  className={`full-connect ${connectionPending ? "is-sent" : ""}`}
+                  onClick={startIntroduction}
+                  disabled={connectionPending}
+                  aria-label={connectionPending ? `Connection request sent to ${profile.name}` : `Connect with ${profile.name}`}
+                >
+                  {connectionPending ? <Check /> : <Send />}
+                  {connectionPending ? "Request sent" : "Connect"}
                 </button>
                 {safetyOpen && (
                   <div className="safety-menu">
@@ -1087,7 +1537,7 @@ function MobileScreen({
                     onClick={() => setVideoPlaying(!videoPlaying)}
                   >
                     <Play />
-                    {videoPlaying ? "Playing · 0:08 / 0:12" : "Play video prompt"}
+                    {videoPlaying ? "Demo video preview · tap to close" : "Preview video prompt"}
                   </button>
                 )}
                 <span className="media-count">
@@ -1102,21 +1552,7 @@ function MobileScreen({
                   </p>
                 </div>
               </div>
-              <div className="media-thumbs" aria-label="All photos and video">
-                {[0, 1, 2, 3].map((i) => (
-                  <button
-                    key={i}
-                    className={`profile-${profile.id} media-${i} ${mediaIndex === i ? "active" : ""}`}
-                    onClick={() => {
-                      onMediaIndex(i);
-                      setVideoPlaying(false);
-                    }}
-                    aria-label={i === 3 ? "Video prompt" : `Photo ${i + 1}`}
-                  >
-                    {i === 3 && <Play />}
-                  </button>
-                ))}
-              </div>
+              <div className="gallery-hint"><ArrowLeft /> Tap left for previous <span>Tap photo for next</span></div>
               {profileNotice && (
                 <div className="profile-notice" role="status">
                   <Check /> {profileNotice}
@@ -1129,13 +1565,18 @@ function MobileScreen({
                   </span>
                   <button
                     className="favorite-toggle"
-                    onClick={() => setMayaFavorite(!mayaFavorite)}
-                    aria-pressed={mayaFavorite}
+                    onClick={() => toggleFavorite()}
+                    aria-pressed={isFavorite}
                   >
-                    <Bookmark fill={mayaFavorite ? "currentColor" : "none"} />
-                    {mayaFavorite ? "Saved" : "Favorite"}
+                    <Bookmark fill={isFavorite ? "currentColor" : "none"} />
+                    {isFavorite ? "Saved" : "Save profile"}
                   </button>
                 </div>
+                <button className="ai-match-summary" onClick={onReason} aria-expanded={showReason}>
+                  <Sparkles />
+                  <span><b>Why Mila recommends {profile.name}</b><small>{showReason ? `You both value long-term connection, ${profile.tags[0].toLowerCase()}, and an intentional pace.` : "See the profile details behind this recommendation"}</small></span>
+                  <ChevronDown />
+                </button>
                 <h3>About {profile.name}</h3>
                 <p>{profile.about}</p>
                 <h3>Two truths and a tiny hill</h3>
@@ -1165,12 +1606,16 @@ function MobileScreen({
                   <X /> Pass
                 </button>
                 <button
+                  className={isLiked ? "is-liked" : ""}
+                  aria-pressed={isLiked}
+                  disabled={isLiked}
                   onClick={() => {
-                    advanceProfile("liked");
-                    onProfileOpen(false);
+                    setLikedProfileIds((current) => current.includes(profile.id) ? current : [...current, profile.id]);
+                    onDecision("liked");
+                    setProfileNotice(`Like sent to ${profile.name}`);
                   }}
                 >
-                  <Heart /> Like {profile.name}
+                  <Heart fill={isLiked ? "currentColor" : "none"} /> {isLiked ? "Liked" : `Like ${profile.name}`}
                 </button>
               </div>
             </section>
@@ -1178,7 +1623,13 @@ function MobileScreen({
           {selfPreviewOpen && (
             <section className="self-profile-preview">
               <header>
-                <button onClick={() => setSelfPreviewOpen(false)} aria-label="Back to profile">
+                <button
+                  onClick={() => {
+                    setSelfPreviewOpen(false);
+                    if (profileSnapshotRef.current) setEditorOpen(true);
+                  }}
+                  aria-label={profileSnapshotRef.current ? "Back to editor" : "Back to profile"}
+                >
                   <ArrowLeft />
                 </button>
                 <span>
@@ -1188,8 +1639,11 @@ function MobileScreen({
                 <button className="preview-edit" onClick={() => openEditor("basics")}>Edit</button>
               </header>
               <div className="self-preview-scroll">
-                <div className={`self-preview-hero profile-${selfProfile.id} media-0`}>
-                  <div className="story-dots"><i className="active"/><i/><i/><i/></div>
+                <div className={`self-preview-hero profile-${selfProfile.id} media-${selfMediaIndex}`}>
+                  <div className="story-dots">{[0,1,2,3].map(index => <i key={index} className={index === selfMediaIndex ? "active" : ""}/>)}</div>
+                  <button className="media-prev" aria-label="Previous profile photo" onClick={() => setSelfMediaIndex((selfMediaIndex + 3) % 4)} />
+                  <button className="media-next" aria-label="Next profile photo" onClick={() => setSelfMediaIndex((selfMediaIndex + 1) % 4)} />
+                  {selfMediaIndex === 3 && <span className="video-pill"><Play /> Video preview</span>}
                   <span className="verified-pill"><BadgeCheck /> Verified</span>
                   <div className="owner-card-shade" />
                   <div className="self-preview-name">
@@ -1198,7 +1652,10 @@ function MobileScreen({
                     <p><MapPin /> {selfProfile.city}</p>
                   </div>
                 </div>
-                <div className="preview-visibility"><Eye /> Visible to people you meet in Discover</div>
+                <div className={`preview-visibility ${hidden ? "is-hidden" : ""}`}>
+                  {hidden ? <EyeOff /> : <Eye />}
+                  {hidden ? "Hidden from new people; existing matches can still chat" : "Visible to people you meet in Match"}
+                </div>
                 <article className="preview-section">
                   <header><h3>About me</h3><button onClick={() => openEditor("story")}>Edit</button></header>
                   <p>{about || "Add a short introduction so people can understand your personality."}</p>
@@ -1216,7 +1673,8 @@ function MobileScreen({
                     <span><BriefcaseBusiness></BriefcaseBusiness><b>{workTitle || "Work title"}</b><small>Career</small></span>
                     <span><GraduationCap></GraduationCap><b>{education || "Education"}</b><small>{schoolName || "School"}</small></span>
                     <span><Ruler></Ruler><b>{height} cm</b><small>Height</small></span>
-                    <span><Sparkles></Sparkles><b>{zodiac}</b><small>From birthday</small></span>
+                    {showGender && <span><UserRound></UserRound><b>{gender}</b><small>Gender</small></span>}
+                    {astrology && <span><Sparkles></Sparkles><b>{zodiac}</b><small>From birthday</small></span>}
                   </div>
                 </article>
                 <article className="preview-section">
@@ -1231,7 +1689,7 @@ function MobileScreen({
             <section className="profile-builder">
               <header>
                 <button
-                  onClick={() => setEditorOpen(false)}
+                  onClick={discardProfileChanges}
                   aria-label="Back to profile"
                 >
                   <ArrowLeft />
@@ -1248,6 +1706,7 @@ function MobileScreen({
                   className="save-profile"
                   onClick={() => {
                     setSaved(true);
+                    profileSnapshotRef.current = null;
                     setTimeout(() => setEditorOpen(false), 650);
                   }}
                 >
@@ -1303,6 +1762,7 @@ function MobileScreen({
                       size="sm"
                       checked={showGender}
                       onCheckedChange={setShowGender}
+                      aria-label="Show gender on my profile"
                     />
                   </div>
                 </div>
@@ -1320,7 +1780,7 @@ function MobileScreen({
                     </span>
                     <Input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
                   </label>
-                  <div className="zodiac-result"><span>{zodiacSymbol[zodiac]}</span><div><b>{zodiac}</b><small>Calculated automatically · Choose whether to display</small></div><Switch size="sm" checked={astrology} onCheckedChange={setAstrology} /></div>
+                  <div className="zodiac-result"><span>{zodiacSymbol[zodiac]}</span><div><b>{zodiac}</b><small>Calculated automatically · Choose whether to display</small></div><Switch size="sm" checked={astrology} onCheckedChange={setAstrology} aria-label="Show zodiac on my profile" /></div>
                 </div>
                 </>}
                 {editorSection === "story" && <>
@@ -1353,6 +1813,10 @@ function MobileScreen({
                   <label><span><Heart /> Dating intent <small>Shown on profile</small></span><NativeSelect size="sm"><NativeSelectOption>Long-term relationship</NativeSelectOption><NativeSelectOption>Marriage-minded</NativeSelectOption><NativeSelectOption>Exploring</NativeSelectOption></NativeSelect></label>
                   <label><span><UsersRound /> Family plans <small>Optional</small></span><NativeSelect size="sm"><NativeSelectOption>Open to children</NativeSelectOption><NativeSelectOption>Wants children</NativeSelectOption><NativeSelectOption>Does not want children</NativeSelectOption><NativeSelectOption>Unsure</NativeSelectOption></NativeSelect></label>
                   <label><span><Globe2 /> Relocation <small>Optional</small></span><NativeSelect size="sm"><NativeSelectOption>Open to relocate</NativeSelectOption><NativeSelectOption>Not open to relocate</NativeSelectOption><NativeSelectOption>Open to discuss</NativeSelectOption></NativeSelect></label>
+                  <div className="preference-strength">
+                    <span><b>Preference strength</b><small>How Mila should use these choices</small></span>
+                    <div>{(["Must-have", "Prefer", "Open-minded"] as const).map(option => <button key={option} aria-pressed={preferenceStrength === option} onClick={() => setPreferenceStrength(option)}>{option}</button>)}</div>
+                  </div>
                   <div className="lifestyle-quick">
                     <button><span>Smoking</span><b>Never</b></button><button><span>Drinking</span><b>Socially</b></button><button><span>Pets</span><b>Enjoys pets</b></button><button><span>Communication</span><b>Balanced</b></button>
                   </div>
@@ -1370,6 +1834,7 @@ function MobileScreen({
                       size="sm"
                       checked={astrology}
                       onCheckedChange={setAstrology}
+                      aria-label="Use astrology compatibility insights"
                     />
                   </div>
                   {astrology && (
@@ -1389,7 +1854,7 @@ function MobileScreen({
           {!voiceOpen && !editorOpen && !profileOpen && !selfPreviewOpen && (
             <button
               className="voice-fab"
-              onClick={() => setVoiceOpen(true)}
+              onClick={beginVoice}
               aria-label="Open Mila Voice"
             >
               <Mic />
@@ -1399,7 +1864,7 @@ function MobileScreen({
           {voiceOpen && (
             <section className="voice-assistant">
               <header>
-                <button onClick={() => setVoiceOpen(false)} aria-label="Close Mila Voice">
+                <button onClick={() => { recognitionRef.current?.abort(); recognitionRef.current = null; setListening(false); window.speechSynthesis?.cancel(); setVoiceOpen(false); }} aria-label="Close Mila Voice">
                   <ArrowLeft />
                 </button>
                 <span>
@@ -1413,7 +1878,7 @@ function MobileScreen({
                   <button
                     className={listening ? "is-listening" : ""}
                     onClick={startListening}
-                    aria-label={listening ? "Listening" : "Start voice command"}
+                    aria-label={listening ? "Stop listening" : "Start voice command"}
                   >
                     <Mic />
                   </button>
@@ -1428,7 +1893,25 @@ function MobileScreen({
                   </button>
                 </div>
                 <div className="voice-section">
-                  <h3>Try a voice action</h3>
+                  <h3>Your daily conversation · {voiceStep}</h3>
+                  <small className="prototype-note">Uses this demo session; not a live daily inbox.</small>
+                  <div className="voice-commands">
+                    <button onClick={() => guideVoice()}>{voiceStep === "done" ? "Start again" : voiceStep === "reply" ? "Draft a reply" : "Yes, continue"}</button>
+                    {voiceStep !== "done" && <button onClick={() => guideVoice(true)}>Skip</button>}
+                    <button onClick={() => window.speechSynthesis?.cancel()}>Pause audio</button>
+                  </div>
+                  {voiceStep === "profiles" && <div className="voice-commands">
+                    {["Read profile", "Next profile", `Like ${profile.name}`, "Draft an intro", "Messages"].map(command => <button key={command} onClick={() => runVoiceCommand(command)}>{command}</button>)}
+                  </div>}
+                  {voiceStep === "reply" && <div className="intro-review">
+                    <span>Reply to {conversationPartner} · review before sending</span>
+                    <Textarea aria-label="Voice reply draft" placeholder="Type or dictate your reply…" value={voiceReply} onChange={event => setVoiceReply(event.target.value)} />
+                    <div><button onClick={() => { setVoiceReply(""); setDictatingReply(false); }}>Discard draft</button>
+                    <button disabled={!voiceReply.trim() || !chatOpen} onClick={() => {
+                      onSendMessage(viewerName, voiceReply.trim()); setVoiceReply(""); setDictatingReply(false); setVoiceStep("done"); answerVoice(`Your reply to ${conversationPartner} was sent.`);
+                    }}>Confirm &amp; send reply</button></div>
+                  </div>}
+                  <h3 style={{marginTop:16}}>Quick actions</h3>
                   <div className="voice-commands">
                     {["Brief me", `Like ${profile.name}`, "Save favorite", "Next photo", "Draft an intro"].map(command => (
                       <button key={command} onClick={() => runVoiceCommand(command)}>
@@ -1471,6 +1954,7 @@ function MobileScreen({
                     <div>
                       <button onClick={() => setIntroDraft(false)}>Discard</button>
                       <button onClick={() => {
+                        onSendIntro(viewerName, profile.name, suggestedIntro);
                         setIntroSent(true);
                         setIntroDraft(false);
                         answerVoice(`Your introduction to ${profile.name} was sent after your confirmation.`);
@@ -1521,11 +2005,30 @@ export default function Home() {
   const [safetyOpenAndroid, setSafetyOpenAndroid] = useState(false);
   const [blockedIos, setBlockedIos] = useState(false);
   const [blockedAndroid, setBlockedAndroid] = useState(false);
-  const [hidden, setHidden] = useState(false);
+  const [hiddenIos, setHiddenIos] = useState(false);
+  const [hiddenAndroid, setHiddenAndroid] = useState(false);
   const [mediaIndexIos, setMediaIndexIos] = useState(0);
   const [mediaIndexAndroid, setMediaIndexAndroid] = useState(0);
   const [radius, setRadius] = useState(5);
+  const [introRequest, setIntroRequest] = useState<IntroRequest | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const matched = decisionIos === "liked" && decisionAndroid === "liked";
+  const chatOpen = matched || introRequest?.status === "accepted";
+  const sendIntro = (from: string, to: string, text: string) => {
+    setIntroRequest({ from, to, text, status: "pending" });
+    setMessages([{ id: `intro-${Date.now()}`, sender: from, text }]);
+  };
+  const acceptIntro = () =>
+    setIntroRequest((request) => request ? { ...request, status: "accepted" } : request);
+  const declineIntro = () =>
+    setIntroRequest((request) => request ? { ...request, status: "declined" } : request);
+  const sendMessage = (sender: string, text: string) => {
+    if (!text.trim() || !chatOpen) return;
+    setMessages((items) => [
+      ...items,
+      { id: `message-${Date.now()}-${items.length}`, sender, text: text.trim() },
+    ]);
+  };
   const sharedPreview = {
     activeTab,
     onTab: setActiveTab,
@@ -1533,10 +2036,15 @@ export default function Home() {
     onTheme: setTheme,
     showReason,
     onReason: () => setShowReason(!showReason),
-    hidden,
-    onHidden: setHidden,
     radius,
     onRadius: setRadius,
+    chatOpen,
+    introRequest,
+    onSendIntro: sendIntro,
+    onAcceptIntro: acceptIntro,
+    onDeclineIntro: declineIntro,
+    messages,
+    onSendMessage: sendMessage,
   };
   return (
     <main className={`preview-shell theme-${theme}`}>
@@ -1565,14 +2073,11 @@ export default function Home() {
             <Globe2 /> Worldwide dating, made personal
           </span>
           <h1>
-            Discover people
-            <br />
-            <em>near your life.</em>
+            A connection starts <em>with you.</em>
           </h1>
           <p>
-            Arjun sees Maya on iPhone while Maya sees Arjun on Android. Like
-            each profile independently to create a mutual match and unlock
-            chat on both phones.
+            Explore the mobile preview. Switch pages and themes, browse profiles,
+            and try an introduction between Arjun and Maya.
           </p>
         </div>
         <div className="preview-controls">
@@ -1629,6 +2134,8 @@ export default function Home() {
             onSafetyOpen={setSafetyOpenIos}
             blocked={blockedIos}
             onBlocked={setBlockedIos}
+            hidden={hiddenIos}
+            onHidden={setHiddenIos}
             mediaIndex={mediaIndexIos}
             onMediaIndex={setMediaIndexIos}
             {...sharedPreview}
@@ -1647,6 +2154,8 @@ export default function Home() {
             onSafetyOpen={setSafetyOpenAndroid}
             blocked={blockedAndroid}
             onBlocked={setBlockedAndroid}
+            hidden={hiddenAndroid}
+            onHidden={setHiddenAndroid}
             mediaIndex={mediaIndexAndroid}
             onMediaIndex={setMediaIndexAndroid}
             {...sharedPreview}
@@ -1654,17 +2163,17 @@ export default function Home() {
         </div>
         <div className="platform-notes">
           <div>
-            <strong>Step 1 · Arjun likes Maya</strong>
+            <strong>Step 1 · Arjun messages Maya</strong>
             <span>
-              Tap the heart on the iPhone. Maya appears under Arjun’s “You
-              liked” history while he waits.
+              Tap the star on iPhone, personalize the introduction, and send
+              it for Maya to review.
             </span>
           </div>
           <div>
-            <strong>Step 2 · Maya likes Arjun</strong>
+            <strong>Step 2 · Maya accepts and replies</strong>
             <span>
-              Tap the heart on Android. Mila recognizes the mutual like and
-              opens chat for both people.
+              Open Requests on Android, accept Arjun’s introduction, and reply
+              from the shared conversation.
             </span>
           </div>
         </div>
