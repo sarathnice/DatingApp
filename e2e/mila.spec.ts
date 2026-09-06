@@ -29,7 +29,115 @@ test("discover spaces are visually grouped and open a matching feed", async ({ p
   await expect(page.getByRole("status").first()).toContainText("Across borders selected · 3 profiles");
   await expect(page.getByText("Across borders · 3 profiles", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Toronto, Canada · Across borders", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Switch to nearby profiles" }).first()).toContainText("Worldwide");
+  await expect(page.getByRole("button", { name: "Return to nearby profiles" }).first()).toContainText("Worldwide");
+});
+
+const discoverCollections = [
+  { tile: "Long-term love", label: "Long-term love", ios: "Priya, 31", android: "Leo, 31", iosCount: 3, androidCount: 3 },
+  { tile: "Free this week", label: "Free this week", ios: "Hana, 29", android: "Marcus, 32", iosCount: 3, androidCount: 3 },
+  { tile: "New nearby", label: "Nearby", ios: "Maya, 29", android: "Arjun, 31", iosCount: 1, androidCount: 3 },
+  { tile: "Across borders", label: "Across borders", ios: "Sofia, 30", android: "Ravi, 32", iosCount: 3, androidCount: 3 },
+  { tile: "Culture & roots", label: "Culture & roots", ios: "Amira, 31", android: "Mateo, 31", iosCount: 3, androidCount: 3 },
+  { tile: "Voice first", label: "Voice first", ios: "Yuki, 29", android: "Theo, 33", iosCount: 3, androidCount: 3 },
+] as const;
+
+for (const collection of discoverCollections) {
+  test(`iPhone Discover opens the ${collection.tile} collection`, async ({ page }) => {
+    const ios = page.locator(".device-column.ios");
+    await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Discover" }).click();
+    await ios.getByRole("button", { name: new RegExp(collection.tile, "i") }).click();
+    await expect(ios.getByRole("heading", { name: collection.ios })).toBeVisible();
+    await expect(ios.getByText(`${collection.label} · ${collection.iosCount} profile${collection.iosCount === 1 ? "" : "s"}`, { exact: true })).toBeVisible();
+  });
+
+  test(`Android Discover opens the ${collection.tile} collection`, async ({ page }) => {
+    const android = page.locator(".device-column.android");
+    await android.getByRole("navigation", { name: "android preview pages" }).getByRole("button", { name: "Discover" }).click();
+    await android.getByRole("button", { name: new RegExp(collection.tile, "i") }).click();
+    await expect(android.getByRole("heading", { name: collection.android })).toBeVisible();
+    await expect(android.getByText(`${collection.label} · ${collection.androidCount} profiles`, { exact: true })).toBeVisible();
+  });
+}
+
+test("iPhone profile search finds a person by city and opens the correct profile", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  await ios.getByRole("button", { name: "Search profiles" }).click();
+  await ios.getByRole("textbox", { name: "Search profiles" }).fill("London");
+  await expect(ios.getByRole("status")).toHaveText("1 profile found");
+  await ios.getByRole("button", { name: "View Amira from London, UK" }).click();
+  await expect(ios.getByRole("heading", { name: "Amira, 31" })).toBeVisible();
+  await expect(ios.getByText("Search results · 1 profile", { exact: true })).toBeVisible();
+});
+
+test("Android profile search finds a person by language and opens the correct profile", async ({ page }) => {
+  const android = page.locator(".device-column.android");
+  await android.getByRole("button", { name: "Search profiles" }).click();
+  await android.getByRole("textbox", { name: "Search profiles" }).fill("Spanish");
+  await expect(android.getByRole("status")).toHaveText("2 profiles found");
+  await expect(android.getByRole("button", { name: "View Leo from Brooklyn" })).toBeVisible();
+  await android.getByRole("button", { name: "View Mateo from Mexico City, Mexico" }).click();
+  await expect(android.getByRole("heading", { name: "Mateo, 31" })).toBeVisible();
+  await expect(android.getByText("Search results · 2 profiles", { exact: true })).toBeVisible();
+});
+
+test("iPhone curated Discover collections advance to their own second profile", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  const cases = [
+    ["Long-term love", "Priya, 31", "Maya, 29"],
+    ["Free this week", "Hana, 29", "Sofia, 30"],
+    ["Across borders", "Sofia, 30", "Amira, 31"],
+    ["Culture & roots", "Amira, 31", "Priya, 31"],
+    ["Voice first", "Yuki, 29", "Hana, 29"],
+  ] as const;
+  for (const [tile, first, second] of cases) {
+    await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Discover" }).click();
+    await ios.getByRole("button", { name: new RegExp(tile, "i") }).click();
+    await expect(ios.getByRole("heading", { name: first })).toBeVisible();
+    await ios.getByRole("button", { name: "Pass" }).click();
+    await expect(ios.getByRole("heading", { name: second })).toBeVisible();
+  }
+});
+
+test("Android curated Discover collections advance to their own second profile", async ({ page }) => {
+  const android = page.locator(".device-column.android");
+  const cases = [
+    ["Long-term love", "Leo, 31", "Arjun, 31"],
+    ["Free this week", "Marcus, 32", "Mateo, 31"],
+    ["Across borders", "Ravi, 32", "Theo, 33"],
+    ["Culture & roots", "Mateo, 31", "Ravi, 32"],
+    ["Voice first", "Theo, 33", "Leo, 31"],
+  ] as const;
+  for (const [tile, first, second] of cases) {
+    await android.getByRole("navigation", { name: "android preview pages" }).getByRole("button", { name: "Discover" }).click();
+    await android.getByRole("button", { name: new RegExp(tile, "i") }).click();
+    await expect(android.getByRole("heading", { name: first })).toBeVisible();
+    await android.getByRole("button", { name: "Pass" }).click();
+    await expect(android.getByRole("heading", { name: second })).toBeVisible();
+  }
+});
+
+test("profile search handles no results and recovers when cleared", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  await ios.getByRole("button", { name: "Search profiles" }).click();
+  await ios.getByRole("textbox", { name: "Search profiles" }).fill("not-a-real-place");
+  await expect(ios.getByRole("status")).toHaveText("0 profiles found");
+  await expect(ios.getByText("No profiles found")).toBeVisible();
+  await ios.getByRole("button", { name: "Clear profile search" }).click();
+  await expect(ios.getByRole("status")).toHaveText("6 profiles found");
+});
+
+test("Across borders opens the correct full profile with media and save controls", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Discover" }).click();
+  await ios.getByRole("button", { name: /Across borders/i }).click();
+  await ios.getByRole("button", { name: "View Sofia's full profile" }).click();
+  const fullProfile = ios.locator(".full-profile");
+  await expect(fullProfile.getByRole("heading", { name: "Sofia, 30" })).toBeVisible();
+  await expect(fullProfile.getByText("Toronto, Canada · Across borders", { exact: true })).toBeVisible();
+  await fullProfile.getByRole("button", { name: "Save profile" }).click();
+  await expect(fullProfile.getByRole("button", { name: "Saved" })).toBeVisible();
+  await fullProfile.getByRole("button", { name: "Next media" }).click();
+  await expect(fullProfile.getByText("Photo 2 · 2/4", { exact: true })).toBeVisible();
 });
 
 test("reports a healthy staging service", async ({ page }) => {

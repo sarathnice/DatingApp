@@ -86,9 +86,10 @@ const themes = [
 type Theme = (typeof themes)[number]["id"];
 type Tab = "discover" | "explore" | "likes" | "chats" | "you";
 type Platform = "ios" | "android";
-type AccountPanel = "settings" | "preferences" | "membership" | "registration" | "mila-lab" | null;
+type AccountPanel = "settings" | "preferences" | "membership" | "registration" | "mila-lab" | "search" | null;
 type WomanProfileId = "maya" | "priya" | "hana";
 type DemoProfileId = "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo" | "sofia" | "amira" | "yuki" | "ravi" | "theo" | "mateo";
+type DiscoveryMode = "nearby" | "global" | "longterm" | "week" | "culture" | "voice" | "search";
 type DemoProfile = {
   id: DemoProfileId;
   photoId?: "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo";
@@ -273,6 +274,36 @@ const discoveryProfiles: Record<Platform, DemoProfile[]> = {
 const globalDiscoveryProfiles: Record<Platform, DemoProfile[]> = {
   ios: [demoProfiles.sofia, demoProfiles.amira, demoProfiles.yuki],
   android: [demoProfiles.ravi, demoProfiles.theo, demoProfiles.mateo],
+};
+
+const curatedDiscoveryProfiles: Record<Exclude<DiscoveryMode, "nearby" | "search">, Record<Platform, DemoProfile[]>> = {
+  global: globalDiscoveryProfiles,
+  longterm: {
+    ios: [demoProfiles.priya, demoProfiles.maya, demoProfiles.amira],
+    android: [demoProfiles.leo, demoProfiles.arjun, demoProfiles.ravi],
+  },
+  week: {
+    ios: [demoProfiles.hana, demoProfiles.sofia, demoProfiles.maya],
+    android: [demoProfiles.marcus, demoProfiles.mateo, demoProfiles.arjun],
+  },
+  culture: {
+    ios: [demoProfiles.amira, demoProfiles.priya, demoProfiles.maya],
+    android: [demoProfiles.mateo, demoProfiles.ravi, demoProfiles.leo],
+  },
+  voice: {
+    ios: [demoProfiles.yuki, demoProfiles.hana, demoProfiles.sofia],
+    android: [demoProfiles.theo, demoProfiles.leo, demoProfiles.ravi],
+  },
+};
+
+const discoveryModeLabels: Record<DiscoveryMode, string> = {
+  nearby: "Nearby",
+  global: "Across borders",
+  longterm: "Long-term love",
+  week: "Free this week",
+  culture: "Culture & roots",
+  voice: "Voice first",
+  search: "Search results",
 };
 
 const scenarioWomen = [demoProfiles.maya, demoProfiles.priya, demoProfiles.hana] as const;
@@ -482,10 +513,11 @@ function MobileScreen({
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
   const [discoveryIndex, setDiscoveryIndex] = useState(0);
-  const [discoveryMode, setDiscoveryMode] = useState<"nearby" | "global" | "intent">("nearby");
+  const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>("nearby");
   const [discoveryHistory, setDiscoveryHistory] = useState<number[]>([]);
   const [cardDecision, setCardDecision] = useState<"idle" | "liked" | "passed" | "intro">("idle");
   const [discoverNotice, setDiscoverNotice] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [messageDraft, setMessageDraft] = useState("");
   const [introComposerOpen, setIntroComposerOpen] = useState(false);
   const [connectReview, setConnectReview] = useState(false);
@@ -615,11 +647,18 @@ function MobileScreen({
   const nearbyQueue = selectedLocalProfile && !strictNearbyQueue.some((person) => person.id === selectedLocalProfile.id)
     ? [selectedLocalProfile, ...strictNearbyQueue]
     : strictNearbyQueue;
-  const queue = discoveryMode === "global"
-    ? globalDiscoveryProfiles[platform]
-    : discoveryMode === "nearby"
-      ? (nearbyQueue.length ? nearbyQueue : [localQueue[0]])
-      : localQueue;
+  const searchableProfiles = [...localQueue, ...globalDiscoveryProfiles[platform]];
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
+  const searchQueue = searchableProfiles.filter((person) =>
+    !normalizedSearch || [person.name, person.city, person.job, ...person.tags, ...person.languages]
+      .some((value) => value.toLocaleLowerCase().includes(normalizedSearch)),
+  );
+  const selectedQueue = discoveryMode === "nearby"
+    ? nearbyQueue
+    : discoveryMode === "search"
+      ? searchQueue
+      : curatedDiscoveryProfiles[discoveryMode][platform];
+  const queue = selectedQueue.length ? selectedQueue : [localQueue[0]];
   const safeDiscoveryIndex = queue.length ? discoveryIndex % queue.length : 0;
   const profile = queue[safeDiscoveryIndex] || initialProfile;
   const profilePhotoId = profile.photoId ?? profile.id;
@@ -797,7 +836,7 @@ function MobileScreen({
     }
   };
   const cycleRadius = () => {
-    if (discoveryMode === "global") {
+    if (discoveryMode !== "nearby") {
       setDiscoveryMode("nearby");
       setDiscoveryIndex(0);
       onMediaIndex(0);
@@ -813,15 +852,23 @@ function MobileScreen({
     setDiscoverNotice(`Within ${nextRadius} mi · ${nextCount || 1} profile${nextCount === 1 ? "" : "s"}`);
   };
   const openExploreFeed = (label: string) => {
-    const nextMode = label === "Across borders" ? "global" : label === "New nearby" ? "nearby" : "intent";
+    const modesByLabel: Record<string, DiscoveryMode> = {
+      "Long-term love": "longterm",
+      "Free this week": "week",
+      "New nearby": "nearby",
+      "Across borders": "global",
+      "Culture & roots": "culture",
+      "Voice first": "voice",
+    };
+    const nextMode = modesByLabel[label] ?? "nearby";
     setDiscoveryMode(nextMode);
     setDiscoveryIndex(0);
     onMediaIndex(0);
-    const resultCount = nextMode === "global"
-      ? globalDiscoveryProfiles[platform].length
-      : nextMode === "nearby"
-        ? Math.max(1, nearbyQueue.length)
-        : localQueue.length;
+    const resultCount = nextMode === "nearby"
+      ? Math.max(1, nearbyQueue.length)
+      : nextMode === "search"
+        ? searchQueue.length
+        : curatedDiscoveryProfiles[nextMode][platform].length;
     setDiscoverNotice(`${label} selected · ${resultCount} profile${resultCount === 1 ? "" : "s"}`);
     onTab("discover");
   };
@@ -1004,7 +1051,7 @@ function MobileScreen({
             <span className="phone-brand">
               <i>m</i> mila
             </span>
-            <button aria-label="Search">
+            <button aria-label="Search profiles" onClick={() => setAccountPanel("search")}>
               <Search />
             </button>
             <button aria-label="Discovery filters" onClick={() => setAccountPanel("preferences")}>
@@ -1072,17 +1119,13 @@ function MobileScreen({
                         </div>
                         <div className="nearby-on-photo">
                           <span>
-                            {discoveryMode === "global" ? <Globe2 /> : <LocateFixed />}
+                            {discoveryMode === "global" ? <Globe2 /> : discoveryMode === "nearby" ? <LocateFixed /> : <Compass />}
                             {calmMode
-                              ? `Calm pick · ${discoveryMode === "global" ? "Worldwide" : "Nearby"}`
-                              : discoveryMode === "global"
-                                ? `Across borders · ${queue.length} profiles`
-                                : discoveryMode === "intent"
-                                  ? `For you · ${queue.length} profiles`
-                                  : `Nearby · ${queue.length} profile${queue.length === 1 ? "" : "s"}`}
+                              ? `Calm pick · ${discoveryModeLabels[discoveryMode]}`
+                              : `${discoveryModeLabels[discoveryMode]} · ${queue.length} profile${queue.length === 1 ? "" : "s"}`}
                           </span>
-                          <button onClick={cycleRadius} aria-label={discoveryMode === "global" ? "Switch to nearby profiles" : `Change distance from ${radius} miles`}>
-                            {discoveryMode === "global" ? "Worldwide" : `Within ${radius} mi`} <ChevronDown />
+                          <button onClick={cycleRadius} aria-label={discoveryMode === "nearby" ? `Change distance from ${radius} miles` : "Return to nearby profiles"}>
+                            {discoveryMode === "nearby" ? `Within ${radius} mi` : discoveryMode === "global" ? "Worldwide" : discoveryMode === "search" ? "Clear search" : "Curated"} <ChevronDown />
                           </button>
                         </div>
                         <span className="verified-pill">
@@ -2262,6 +2305,55 @@ function MobileScreen({
                   <button className="settings-delete" onClick={() => setProfileNotice("Account deletion requires identity confirmation and a cooling-off step") }><UserX /> Delete account</button>
                 </div>
                 <p className="settings-version">Mila preview · version 0.35</p>
+              </div>
+            </section>
+          )}
+          {accountPanel === "search" && (
+            <section className="account-panel search-panel">
+              <header className="account-panel-header">
+                <button onClick={() => setAccountPanel(null)} aria-label="Close profile search"><ArrowLeft /></button>
+                <span><b>Search profiles</b><small>Name, city, work, interest or language</small></span>
+                <i>{searchQueue.length}</i>
+              </header>
+              <div className="account-panel-scroll">
+                <div className="profile-search-field">
+                  <Search />
+                  <Input
+                    aria-label="Search profiles"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Try London, films or Spanish"
+                    autoFocus
+                  />
+                  {searchQuery && <button onClick={() => setSearchQuery("")} aria-label="Clear profile search"><X /></button>}
+                </div>
+                <p className="search-result-count" role="status">
+                  {searchQueue.length} profile{searchQueue.length === 1 ? "" : "s"} found
+                </p>
+                {searchQueue.length ? (
+                  <section className="search-profile-list">
+                    {searchQueue.map((person, index) => (
+                      <button
+                        key={person.id}
+                        aria-label={`View ${person.name} from ${person.city}`}
+                        onClick={() => {
+                          setDiscoveryMode("search");
+                          setDiscoveryIndex(index);
+                          onMediaIndex(0);
+                          setDiscoverNotice(`Search selected · ${person.name} from ${person.city}`);
+                          setAccountPanel(null);
+                          onTab("discover");
+                        }}
+                      >
+                        <span className={`search-profile-avatar profile-${person.photoId ?? person.id}`} />
+                        <span><b>{person.name}, {person.age}</b><small>{person.city} · {person.job}</small></span>
+                        <ChevronRight />
+                      </button>
+                    ))}
+                  </section>
+                ) : (
+                  <div className="search-empty"><Search /><b>No profiles found</b><small>Try a city, language, interest or a shorter search.</small></div>
+                )}
               </div>
             </section>
           )}

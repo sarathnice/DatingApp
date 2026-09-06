@@ -158,9 +158,8 @@
 .calm-mode-card small { margin-top:3px; font-size:12px; line-height:1.35; color:color-mix(in srgb,var(--ink) 60%,transparent); }
 .in-app-themes button { font-size:14px; height:48px; }
 .you-screen>h3 { font-size:13px; }
-.voice-fab { min-height:44px; height:44px; top:26px; bottom:auto; right:56px; padding:0 11px; box-shadow:none; }
-.app-head { grid-template-columns:1fr 44px; }
-.app-head>button[aria-label="Search"] { display:none; }
+.voice-fab { min-height:44px; height:44px; top:26px; bottom:auto; right:100px; padding:0 11px; box-shadow:none; z-index:35; }
+.app-head { position:relative; z-index:30; grid-template-columns:minmax(0,1fr) 44px 44px; }
 .full-media-prev,.full-media-next { top:0; bottom:0; }
 .full-media-prev { width:25%; }
 .full-media-next { left:25%; right:0; width:75%; }
@@ -628,6 +627,25 @@ button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
 .account-panel-header .panel-save { min-width:52px; min-height:40px; border:0; border-radius:999px; background:var(--accent); color:#fff; font-size:12px; font-weight:700; }
 .account-panel-scroll { min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:16px 16px 34px; scrollbar-width:none; }
 .account-panel-scroll::-webkit-scrollbar { display:none; }
+.profile-search-field { min-height:48px; padding:0 10px; border:1px solid var(--ui-line); border-radius:16px; background:var(--surface); display:grid; grid-template-columns:18px minmax(0,1fr) auto; align-items:center; gap:7px; box-shadow:var(--ui-shadow-sm); }
+.profile-search-field>svg { width:17px; color:var(--accent); }
+.profile-search-field [data-slot=input] { height:46px!important; padding:0!important; border:0!important; background:transparent!important; box-shadow:none!important; font-size:14px!important; }
+.profile-search-field>button { width:32px; height:32px; border:0; border-radius:50%; background:var(--soft); color:var(--ink); display:grid; place-items:center; }
+.profile-search-field>button svg { width:14px; }
+.search-result-count { margin:10px 3px 7px; color:color-mix(in srgb,var(--ink) 55%,transparent); font-size:12px; }
+.search-profile-list { overflow:hidden; border:1px solid var(--ui-line); border-radius:18px; background:var(--surface); box-shadow:var(--ui-shadow-sm); }
+.search-profile-list>button { width:100%; min-height:70px; padding:10px 12px; border:0; border-bottom:1px solid var(--ui-line); background:transparent; color:var(--ink); display:grid; grid-template-columns:48px minmax(0,1fr) 18px; align-items:center; gap:10px; text-align:left; }
+.search-profile-list>button:last-child { border-bottom:0; }
+.search-profile-list>button>span:nth-child(2) { min-width:0; display:flex; flex-direction:column; }
+.search-profile-list b { font-size:14px; font-weight:650; }
+.search-profile-list small { margin-top:3px; overflow:hidden; color:color-mix(in srgb,var(--ink) 55%,transparent); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+.search-profile-list>button>svg { width:16px; opacity:.42; }
+.search-profile-avatar { width:48px; height:48px; border-radius:15px; background-size:200% 200%; background-position:0 0; }
+.search-empty { min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:color-mix(in srgb,var(--ink) 52%,transparent); }
+.search-empty>svg { width:28px; color:var(--accent); }
+.search-empty b { margin-top:10px; color:var(--ink); font-size:15px; }
+.search-empty small { max-width:210px; margin-top:5px; font-size:12px; line-height:1.45; }
+.theme-paper .profile-search-field,.theme-paper .profile-search-field>button,.theme-paper .search-profile-list,.theme-paper .search-profile-avatar { border-radius:0; }
 .preference-summary,.membership-hero,.registration-tip,.safety-free { display:grid; grid-template-columns:38px minmax(0,1fr); gap:11px; align-items:start; padding:15px; border-radius:18px; background:color-mix(in srgb,var(--accent) 8%,var(--surface)); }
 .preference-summary>svg,.membership-hero>svg,.registration-tip>svg,.safety-free>svg { width:23px; color:var(--accent); }
 .preference-summary span,.membership-hero span,.registration-tip span,.safety-free span { display:flex; flex-direction:column; }
