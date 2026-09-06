@@ -62,15 +62,15 @@ import {
 } from "@/components/ui/native-select";
 
 const themes = [
-  { id: "sunrise", name: "Sunrise", note: "Warm & human", color: "#ef6547" },
-  { id: "bloom", name: "Bloom", note: "Playful & social", color: "#8e5bdb" },
+  { id: "sunrise", name: "Sunrise", note: "Warm & human", color: "#f56300" },
+  { id: "bloom", name: "Bloom", note: "Playful & social", color: "#d93675" },
   {
     id: "midnight",
     name: "Midnight",
     note: "Premium & cinematic",
-    color: "#7be4cb",
+    color: "#ff9f0a",
   },
-  { id: "paper", name: "Paper", note: "Minimal & direct", color: "#d6ff4b" },
+  { id: "paper", name: "Evergreen", note: "Minimal & direct", color: "#147d64" },
 ] as const;
 type Theme = (typeof themes)[number]["id"];
 type Tab = "discover" | "explore" | "likes" | "chats" | "you";
