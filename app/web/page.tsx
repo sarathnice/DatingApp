@@ -16,7 +16,6 @@ import {
   MessageCircle,
   Mic,
   Search,
-  Send,
   Settings2,
   ShieldCheck,
   SlidersHorizontal,
@@ -127,7 +126,7 @@ export default function MilaWebApp() {
   return (
     <main className="mila-web-app">
       <aside className="web-sidebar" aria-label="Mila web navigation">
-        <a className="web-brand" href="/web" aria-label="Mila web home"><i>m</i><span>mila</span></a>
+        <button className="web-brand" onClick={() => setActiveTab("discover")} aria-label="Mila web home"><i>m</i><span>mila</span></button>
         <nav aria-label="Mila web navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -160,10 +159,10 @@ export default function MilaWebApp() {
                 <button className="web-intro" onClick={() => setIntroOpen(true)}><Sparkles /> Send intro</button>
                 <button className={`web-like ${liked ? "active" : ""}`} onClick={likeProfile} disabled={liked} aria-label={liked ? `${profile.name} liked` : `Like ${profile.name}`}><Heart fill={liked ? "currentColor" : "none"} /></button>
               </div>
-              {notice && <p className="web-notice" role="status"><Check /> {notice}</p>}
+              {notice && <output className="web-notice"><Check /> {notice}</output>}
               <div className="web-next-row"><span>Up next</span><button onClick={nextProfile}>Next profile <ChevronRight /></button></div>
               <div className="web-mini-list">
-                {profiles.map((person, index) => <button key={person.id} className={index === profileIndex ? "active" : ""} onClick={() => { setProfileIndex(index); setNotice(""); }}><span className={`web-mini-photo web-photo-${person.id}`} /><span><b>{person.name}, {person.age}</b><small>{person.match}% match · {person.distance}</small></span></button>)}
+                {profiles.map((person, index) => <button key={person.id} aria-label={`View ${person.name}, ${person.age}`} className={index === profileIndex ? "active" : ""} onClick={() => { setProfileIndex(index); setNotice(""); }}><span className={`web-mini-photo web-photo-${person.id}`} /><span><b>{person.name}, {person.age}</b><small>{person.match}% match · {person.distance}</small></span></button>)}
               </div>
             </section>
 

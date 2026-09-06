@@ -37,3 +37,31 @@ test("web navigation adapts for likes and messages", async ({ page, isMobile }) 
   await navigation.getByRole("button", { name: /Messages/i }).click();
   await expect(page.getByRole("heading", { name: "Your conversations" })).toBeVisible();
 });
+
+test("web layout stays usable without page-level horizontal overflow", async ({ page, isMobile }) => {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  if (isMobile) {
+    const navigation = page.getByRole("navigation", { name: "Mila mobile web navigation" });
+    await expect(navigation).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Mila web navigation" })).toBeHidden();
+
+    for (const name of ["Voice assistant", "Notifications", "Pass Maya", "Save Maya favorite", "Like Maya"]) {
+      const box = await page.getByRole("button", { name }).boundingBox();
+      expect(box, `${name} should have a rendered touch target`).not.toBeNull();
+      expect(Math.min(box!.width, box!.height), `${name} should be at least 44px`).toBeGreaterThanOrEqual(44);
+    }
+
+    await page.getByRole("button", { name: "Next profile" }).scrollIntoViewIfNeeded();
+    const navBox = await navigation.boundingBox();
+    const nextBox = await page.getByRole("button", { name: "Next profile" }).boundingBox();
+    expect(navBox).not.toBeNull();
+    expect(nextBox).not.toBeNull();
+    expect(nextBox!.y + nextBox!.height).toBeLessThanOrEqual(navBox!.y);
+  } else {
+    await expect(page.getByRole("navigation", { name: "Mila web navigation" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Mila mobile web navigation" })).toBeHidden();
+    await expect(page.getByRole("textbox", { name: "Search interests or places" })).toBeVisible();
+  }
+});
