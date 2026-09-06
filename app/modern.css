@@ -890,6 +890,16 @@ button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
 .theme-paper .owner-score { border-radius:999px; }
 .theme-paper .profile-section-list,.theme-paper .preview-section,.theme-paper .builder-section { border-radius:18px; }
 .theme-paper .editor-section-tabs { border-radius:14px; }
+
+/* Quiet utility controls keep photography and profile content visually primary. */
+.nearby-on-photo span,.nearby-on-photo button { padding-inline:8px; font-size:10.5px; font-weight:680; }
+.nearby-on-photo span { height:30px; }
+.nearby-on-photo button { position:relative; min-height:36px; height:36px; }
+.nearby-on-photo button::after,.voice-fab::after { content:""; position:absolute; inset:-4px; }
+.nearby-on-photo svg { width:11px; height:11px; }
+.voice-fab { position:absolute; min-height:36px; height:36px; top:30px; padding-inline:9px; gap:5px; }
+.voice-fab span { font-size:10px; font-weight:680; }
+.voice-fab svg { width:12px; height:12px; }
 @media (hover:hover) {
   .page-tabs button:hover,.compact-themes button:hover,.in-app-themes button:hover { transform:translateY(-1px); border-color:var(--ui-line-strong); }
 }

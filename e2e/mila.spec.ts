@@ -55,6 +55,27 @@ test("mobile phone frame fits the viewport with aligned corners", async ({ page 
   expect(frameBox!.height / frameBox!.width).toBeLessThan(2.2);
 });
 
+test("mobile overlay labels stay compact without losing their controls", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile sizing check");
+  const ios = page.locator(".device-column.ios");
+  const nearby = ios.locator(".nearby-on-photo span");
+  const within = ios.locator(".nearby-on-photo button");
+  const voice = ios.getByRole("button", { name: "Open Mila Voice" });
+
+  await expect(nearby).toBeVisible();
+  await expect(within).toBeVisible();
+  await expect(voice).toBeVisible();
+
+  const sizes = await Promise.all([nearby, within, voice].map(async (item) => ({
+    box: await item.boundingBox(),
+    font: await item.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
+  })));
+  expect(sizes[0].box!.height).toBeLessThanOrEqual(31);
+  expect(sizes[1].box!.height).toBeLessThanOrEqual(37);
+  expect(sizes[2].box!.height).toBeLessThanOrEqual(37);
+  expect(Math.max(...sizes.map((size) => size.font))).toBeLessThanOrEqual(11);
+});
+
 test("opens the Mila preview and profile settings", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /A connection starts/i })).toBeVisible();
   await page
