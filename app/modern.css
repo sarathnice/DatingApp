@@ -346,6 +346,280 @@ button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
 .feature-row strong { font-size:14px; }
 .feature-row small { font-size:12px; }
 .product-rules p { font-size:13px; }
+
+/* Mila Air — content-first system inspired by Apple's restraint, not its branding. */
+.preview-shell.theme-sunrise {
+  --paper:#f5f5f7;
+  --phone:#f5f5f7;
+  --surface:#ffffff;
+  --soft:#e8e8ed;
+  --ink:#1d1d1f;
+  --accent:#0071e3;
+  --accent2:#ff375f;
+}
+.preview-shell.theme-bloom {
+  --paper:#f5f5f7;
+  --phone:#f5f5f7;
+  --surface:#ffffff;
+  --soft:#ececf1;
+  --ink:#1d1d1f;
+  --accent:#7d3cff;
+  --accent2:#ff375f;
+}
+.preview-shell.theme-midnight {
+  --paper:#000000;
+  --phone:#000000;
+  --surface:#1c1c1e;
+  --soft:#2c2c2e;
+  --ink:#f5f5f7;
+  --accent:#0a84ff;
+  --accent2:#ff453a;
+}
+.preview-shell.theme-paper {
+  --paper:#ffffff;
+  --phone:#f5f5f7;
+  --surface:#ffffff;
+  --soft:#e8e8ed;
+  --ink:#1d1d1f;
+  --accent:#0071e3;
+  --accent2:#34c759;
+}
+.preview-shell,
+.phone-screen,
+.intro-composer,
+.connect-review {
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",var(--font-geist-sans),"Segoe UI",sans-serif;
+}
+.preview-header { background:color-mix(in srgb,var(--paper) 90%,transparent); }
+.mila-mark,.phone-brand i { background:var(--accent2); }
+.compare-heading h1,.plan-heading h2 {
+  font-family:inherit;
+  font-weight:650;
+  letter-spacing:-.045em;
+}
+.compare-heading h1 em,.plan-heading h2 em { color:inherit; font-style:normal; }
+.section-kicker,.screen-kicker,.control-group>span,.you-screen>h3 {
+  letter-spacing:.035em;
+  text-transform:none;
+  font-weight:650;
+}
+.page-tabs {
+  gap:4px;
+  padding:4px;
+  border-radius:14px;
+  background:color-mix(in srgb,var(--soft) 76%,transparent);
+}
+.page-tabs button {
+  min-height:40px;
+  padding:0 13px;
+  border:0;
+  border-radius:11px;
+  background:transparent;
+  box-shadow:none;
+  color:var(--ui-muted);
+  font-size:14px;
+  font-weight:560;
+}
+.page-tabs button[aria-pressed=true] {
+  background:var(--surface);
+  color:var(--ink);
+  box-shadow:0 1px 3px color-mix(in srgb,var(--ink) 12%,transparent);
+}
+.compact-themes { gap:10px; }
+.compact-themes button {
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+.compact-themes button[aria-pressed=true] { box-shadow:inset 0 0 0 2px var(--accent); }
+.device-grid {
+  padding:20px;
+  border:0;
+  border-radius:30px;
+  background:var(--soft);
+  box-shadow:none;
+}
+.compare-phone { box-shadow:0 24px 60px rgba(0,0,0,.2),inset 0 0 0 1px rgba(255,255,255,.18); }
+.phone-screen { background:var(--phone); }
+.app-head {
+  border:0;
+  background:color-mix(in srgb,var(--phone) 84%,transparent);
+}
+.app-head button:hover { background:color-mix(in srgb,var(--soft) 78%,transparent); }
+.phone-brand { font-weight:680; }
+.today-bar {
+  border:0;
+  border-radius:14px;
+  background:var(--surface);
+  box-shadow:none;
+}
+.today-bar button {
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:var(--accent);
+  font-weight:600;
+}
+.today-bar button:hover { border:0; background:var(--soft); }
+.bottom-nav {
+  margin:0;
+  padding:7px 7px 12px;
+  border:0;
+  border-radius:0;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  box-shadow:0 -1px 0 var(--ui-line);
+}
+.bottom-nav button {
+  min-height:56px;
+  border-radius:10px;
+  color:color-mix(in srgb,var(--ink) 48%,transparent);
+  font-size:11px;
+  font-weight:540;
+}
+.bottom-nav button[aria-current=page] { background:transparent; color:var(--accent); font-weight:640; }
+.compare-phone.android .bottom-nav button[aria-current=page] svg { background:transparent; }
+.inner-screen { padding-inline:18px; }
+.inner-screen h2 { font-size:32px; font-weight:680; letter-spacing:-.045em; }
+.inner-screen>p { font-size:15px; line-height:1.45; }
+.profile-card { border:0; box-shadow:none; }
+.profile-tags span { border:0; background:rgba(29,29,31,.64); }
+.overlay-actions button { border:0!important; }
+.swipe-actions button,.swipe-actions .like {
+  background:rgba(245,245,247,.92)!important;
+  border:0!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.18)!important;
+}
+.overlay-actions .like { color:#ff2d55!important; }
+.overlay-actions .like.is-liked,.full-actions .is-liked { background:#34c759!important; color:#fff!important; }
+.overlay-actions .priority { color:#ff9f0a!important; }
+.overlay-actions .priority span { color:#ff9f0a; }
+.explore-grid { gap:12px; }
+.explore-grid button,.explore-grid button.wide {
+  min-height:180px;
+  padding:20px;
+  border:0;
+  border-radius:24px;
+  background:var(--surface);
+  box-shadow:none;
+}
+.explore-grid button.wide { background:var(--ink); color:var(--paper); }
+.explore-grid b { font-size:20px; font-weight:650; letter-spacing:-.035em; }
+.explore-grid small { font-size:13px; opacity:.64; }
+.likes-tabs {
+  padding:3px;
+  border-radius:12px;
+  background:var(--soft);
+}
+.likes-tabs button { min-height:40px; border-radius:9px!important; font-weight:560; }
+.likes-tabs button[aria-pressed=true] { color:var(--ink); box-shadow:0 1px 3px color-mix(in srgb,var(--ink) 12%,transparent); }
+.people-photo { border:0; border-radius:22px; box-shadow:none; }
+.people-photo-open { background:rgba(245,245,247,.86); box-shadow:none; backdrop-filter:blur(12px); }
+.chat-row { padding:16px 0; }
+.chat-row:hover { background:transparent; }
+.quick-message [data-slot=input] { border:0!important; border-radius:14px!important; background:var(--surface)!important; box-shadow:none; }
+.quick-message button { border-radius:14px; box-shadow:none; }
+.safe-date-card,.calm-mode-card,.ai-match-summary {
+  border:0;
+  border-radius:18px;
+  background:var(--surface);
+  box-shadow:none;
+}
+.safe-date-card>button,.safe-date-plan button,.primary-cta {
+  border-radius:12px;
+  background:var(--accent);
+  box-shadow:none;
+  font-weight:620;
+}
+.owner-card { border:0; border-radius:22px; box-shadow:none; }
+.owner-score,.owner-edit-button,.owner-preview-button {
+  border:0;
+  border-radius:999px;
+  font-weight:600;
+  backdrop-filter:blur(18px) saturate(1.35);
+}
+.owner-score,.owner-edit-button { background:rgba(245,245,247,.86); }
+.owner-preview-button { background:rgba(29,29,31,.58); }
+.profile-quick-links {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.profile-quick-links button {
+  min-height:52px;
+  justify-content:flex-start;
+  padding:0 14px;
+  border:0;
+  border-radius:14px;
+  background:var(--surface);
+  font-size:14px;
+  font-weight:560;
+}
+.profile-quick-links button:hover { border:0; background:color-mix(in srgb,var(--surface) 82%,var(--soft)); }
+.owner-photo-strip { gap:8px; }
+.owner-photo-strip button { border:0; border-radius:16px; box-shadow:none; }
+.profile-section-list {
+  border:0;
+  border-radius:18px;
+  background:var(--surface);
+  box-shadow:none;
+}
+.profile-section-list button { min-height:68px; border-color:var(--ui-line); }
+.profile-section-list button:hover { background:transparent; }
+.profile-section-list b { font-weight:600; }
+.in-app-themes { gap:8px; }
+.in-app-themes button {
+  min-height:52px;
+  border:0;
+  border-radius:14px;
+  background:var(--surface);
+  font-weight:560;
+}
+.in-app-themes button[aria-pressed=true] { color:var(--accent); box-shadow:inset 0 0 0 2px var(--accent); }
+.setting-row { min-height:68px; padding-inline:8px; }
+.full-connect {
+  background:rgba(245,245,247,.9);
+  border-radius:999px;
+  box-shadow:0 6px 22px rgba(0,0,0,.18);
+  backdrop-filter:blur(18px) saturate(1.35);
+}
+.full-actions button,.profile-safety-actions button { border:0; border-radius:12px; }
+.full-actions button:not(.is-liked),.profile-safety-actions button { background:var(--surface); }
+.intro-composer { border-radius:24px; box-shadow:0 24px 70px rgba(0,0,0,.26); }
+.intro-compose-actions button { border:0; border-radius:12px; }
+.intro-compose-actions button:first-child { background:var(--soft); }
+.intro-compose-actions button:last-child { background:var(--accent); }
+.voice-commands button,.intro-review button { border:0; background:var(--surface); }
+.preview-section,.builder-section,.completion-card,.astrology-card {
+  border:0;
+  border-radius:18px;
+  box-shadow:none;
+}
+.preview-section header button,.preview-edit,.profile-summary button { color:var(--accent); }
+.save-profile { border-radius:999px; box-shadow:none; }
+.editor-section-tabs { border:0; background:var(--soft); }
+.editor-section-tabs button[aria-pressed=true] { color:var(--ink); }
+.builder-section [data-slot=native-select],.builder-section [data-slot=input],.about-field textarea {
+  border:0!important;
+  background:var(--soft)!important;
+}
+.feature-plan { background:var(--paper); }
+.feature-group { border:0; border-radius:22px; box-shadow:none; }
+.feature-group header span,.product-rules strong { font-family:inherit; font-weight:650; letter-spacing:-.025em; }
+.feature-row>i { border-radius:10px; }
+.theme-paper .mila-mark,.theme-paper .phone-brand i { border-radius:50%; border-color:transparent; }
+.theme-paper .feature-link,.theme-paper .primary-cta { border-radius:999px!important; box-shadow:none; }
+.theme-paper .theme-picker { border-radius:22px; border-color:transparent; }
+.theme-paper .theme-options button { border-radius:14px; border-color:transparent; }
+.theme-paper .profile-card { border-radius:0; border-color:transparent; box-shadow:none; }
+.theme-paper .explore-grid button { border-radius:24px; border-color:transparent; box-shadow:none; }
+.theme-paper .profile-summary { border-radius:18px; border-color:transparent; }
+.theme-paper .in-app-themes button { border-radius:14px; border-color:transparent; }
+.theme-paper .swipe-actions button { border-radius:50%; box-shadow:0 5px 18px rgba(0,0,0,.18); }
+.theme-paper .bottom-nav { border-radius:0; border-top:0; }
+.theme-paper .owner-card { border-radius:22px; }
+.theme-paper .owner-score { border-radius:999px; }
+.theme-paper .profile-section-list,.theme-paper .preview-section,.theme-paper .builder-section { border-radius:18px; }
+.theme-paper .editor-section-tabs { border-radius:14px; }
 @media (hover:hover) {
   .page-tabs button:hover,.compact-themes button:hover,.in-app-themes button:hover { transform:translateY(-1px); border-color:var(--ui-line-strong); }
 }
