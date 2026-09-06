@@ -11,7 +11,6 @@ import {
   Compass,
   Crown,
   GraduationCap,
-  Handshake,
   Heart,
   MapPin,
   MessageCircle,
@@ -35,6 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import "./web.css";
+import { MilaConnectMark } from "@/components/mila-connect-mark";
 
 type WebTab = "discover" | "likes" | "messages" | "profile";
 
@@ -157,7 +157,7 @@ export default function MilaWebApp() {
               <div className="web-primary-actions">
                 <button className="web-pass" onClick={nextProfile} aria-label={`Pass ${profile.name}`}><X /></button>
                 <button className={`web-favorite ${favorite ? "active" : ""}`} onClick={toggleFavorite} aria-pressed={favorite} aria-label={`${favorite ? "Remove" : "Save"} ${profile.name} favorite`}><Bookmark fill={favorite ? "currentColor" : "none"} /></button>
-                <button className="web-intro" onClick={() => setIntroOpen(true)}><Handshake /> Connect</button>
+                <button className="web-intro" onClick={() => setIntroOpen(true)}><MilaConnectMark /> Connect</button>
                 <button className={`web-like ${liked ? "active" : ""}`} onClick={likeProfile} disabled={liked} aria-label={liked ? `${profile.name} liked` : `Like ${profile.name}`}><Heart fill={liked ? "currentColor" : "none"} /></button>
               </div>
               {notice && <output className="web-notice"><Check /> {notice}</output>}
