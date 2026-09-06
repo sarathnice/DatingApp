@@ -364,12 +364,6 @@ const navigation = [
   { id: "chats", label: "Chats", icon: MessageCircle },
   { id: "you", label: "Profile", icon: UserRound },
 ] as const;
-const signatureNavigation = [
-  { id: "discover", label: "Discover", icon: Compass },
-  { id: "likes", label: "Likes", icon: Heart },
-  { id: "chats", label: "Chats", icon: MessageCircle },
-  { id: "you", label: "You", icon: UserRound },
-] as const;
 
 const featureGroups = [
   {
@@ -481,9 +475,7 @@ function MobileScreen({
   onMediaIndex,
   radius,
   onRadius,
-  testing,
 }: {
-  testing: boolean;
   platform: Platform;
   viewerName: string;
   profile: DemoProfile;
@@ -1099,12 +1091,6 @@ function MobileScreen({
             </button>
           </div>
           <div className="screen-content">
-            {!testing && (activeTab === "discover" || activeTab === "explore") && (
-              <div className="discovery-segments" role="group" aria-label="Discover view">
-                <button aria-pressed={activeTab === "discover"} onClick={() => onTab("discover")}>For you</button>
-                <button aria-pressed={activeTab === "explore"} onClick={() => onTab("explore")}>Explore interests</button>
-              </div>
-            )}
             {activeTab === "discover" && (
               <div className="discover-screen">
                 {discoverNotice && <div className="discover-notice" role="status"><Check /> {discoverNotice}</div>}
@@ -1244,7 +1230,6 @@ function MobileScreen({
                         <div className="swipe-actions overlay-actions">
                           <button className="action-pass" aria-label="Pass" onClick={() => advanceProfile("passed")}>
                             <X />
-                            {!testing && <span>Pass</span>}
                           </button>
                           <button className="action-undo" aria-label="Undo" onClick={undoProfile}>
                             <RotateCcw />
@@ -1254,8 +1239,8 @@ function MobileScreen({
                             aria-label={`Send intro to ${profile.name}`}
                             onClick={startIntroduction}
                           >
-                            {testing ? <Star /> : <Send />}
-                            <span>{testing ? "Send intro" : "Connect"}</span>
+                            <Star />
+                            <span>Send intro</span>
                           </button>
                           <button
                             className={`like ${isLiked ? "is-liked" : ""}`}
@@ -1265,7 +1250,6 @@ function MobileScreen({
                             onClick={() => advanceProfile("liked")}
                           >
                             <Heart fill={isLiked ? "currentColor" : "none"} />
-                            {!testing && <span>{isLiked ? "Liked" : "Like"}</span>}
                           </button>
                         </div>
                       </div>
@@ -1717,7 +1701,6 @@ function MobileScreen({
                 <span className="screen-kicker">Your space</span>
                 <h2>My profile</h2>
                 <p>Keep your story current.</p>
-                {!testing && <a className="testing-link" href="/testing">Open demo testing studio</a>}
                 <div className={`owner-card profile-${selfProfile.id} media-0`}>
                   <div className="owner-card-shade" />
                   <span className="owner-score">{completeness}% complete</span>
@@ -2004,17 +1987,13 @@ function MobileScreen({
                   <blockquote>“{profile.prompt}”</blockquote>
                 </section>
                 <section className="modern-profile-section lifestyle-profile-section">
-                  <header><span>{testing ? "Lifestyle & interests" : "Everyday life"}</span><small>At a glance</small></header>
+                  <header><span>Lifestyle &amp; interests</span><small>At a glance</small></header>
                   <div className="full-tags">
                     <span>Never smokes</span><span>Drinks socially</span><span>Enjoys pets</span>
                     {profile.tags.map(tag => <span key={tag}>{tag}</span>)}
                     <span>Weekend travel</span>
                   </div>
                 </section>
-                {!testing && <section className="signature-photo-story">
-                  <h3>Life in pictures</h3>
-                  <div>{[0, 1, 2].map(index => <div key={index} role="img" aria-label={`${profile.name}, photo ${index + 1}`} className={`profile-${profilePhotoId} media-${index}`} />)}</div>
-                </section>}
               </div>
               <div className="profile-safety-actions">
                 <button onClick={shareProfile}>
@@ -2585,7 +2564,7 @@ function MobileScreen({
               aria-label="Open Mila Voice"
             >
               <Mic />
-              <span>{testing ? "Mila Voice" : "Ask Mila"}</span>
+              <span>Mila Voice</span>
             </button>
           )}
           {voiceOpen && (
@@ -2601,11 +2580,6 @@ function MobileScreen({
                 <i>{briefScheduled ? `${briefTime} daily` : "On demand"}</i>
               </header>
               <div className="voice-scroll">
-                {!testing && <div className="voice-entry-choices" role="group" aria-label="Ask Mila actions">
-                  <button onClick={() => { setVoiceStep("matches"); answerVoice("Would you like me to read your matched profiles? Say yes or skip."); }}><Volume2 /> Listen</button>
-                  <button onClick={() => { setVoiceStep("profiles"); answerVoice("Would you like me to read the profile you are viewing? Say yes or skip."); }}><Compass /> Explore</button>
-                  <button onClick={() => { setVoiceStep("reply"); setDictatingReply(false); answerVoice(chatOpen ? "Type or dictate a reply below. Review it before confirming send." : "Connect with someone before sending a reply. You can still prepare a draft."); }}><MessageCircle /> Reply</button>
-                </div>}
                 <div className="voice-hero">
                   <button
                     className={listening ? "is-listening" : ""}
@@ -2708,13 +2682,13 @@ function MobileScreen({
             </section>
           )}
           <nav className="bottom-nav" aria-label={`${platform} preview pages`}>
-            {(testing ? navigation : signatureNavigation).map((item) => {
+            {navigation.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.id}
                   onClick={() => onTab(item.id)}
-                  aria-current={activeTab === item.id || (!testing && item.id === "discover" && activeTab === "explore") ? "page" : undefined}
+                  aria-current={activeTab === item.id ? "page" : undefined}
                 >
                   <Icon />
                   <span>{item.label}</span>
@@ -2730,7 +2704,7 @@ function MobileScreen({
   );
 }
 
-export default function Home({ testing = false }: { testing?: boolean }) {
+export default function Home() {
   const [theme, setTheme] = useState<Theme>("sunrise");
   const [selectedWomanId, setSelectedWomanId] = useState<WomanProfileId>("maya");
   const [selectedManId, setSelectedManId] = useState<ManProfileId>("arjun");
@@ -2800,7 +2774,6 @@ export default function Home({ testing = false }: { testing?: boolean }) {
     setActiveTab("discover");
   };
   const sharedPreview = {
-    testing,
     activeTab,
     onTab: setActiveTab,
     theme,
@@ -2818,7 +2791,7 @@ export default function Home({ testing = false }: { testing?: boolean }) {
     onSendMessage: sendMessage,
   };
   return (
-    <main className={`preview-shell theme-${theme} ${testing ? "testing-mode" : "signature-mode"}`}>
+    <main className={`preview-shell theme-${theme}`}>
       <header className="preview-header">
         <a className="mila-brand" href="#preview">
           <span className="mila-mark">m</span>
@@ -2827,7 +2800,6 @@ export default function Home({ testing = false }: { testing?: boolean }) {
         <div className="preview-label">
           <span /> iOS + Android product preview
         </div>
-        {testing && <a className="testing-link" href="/">Back to Mila app</a>}
         <Button
           className="feature-link"
           onClick={() => { window.location.href = "/web"; }}

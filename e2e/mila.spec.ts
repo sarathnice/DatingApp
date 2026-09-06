@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/testing");
+  await page.goto("/");
   await page.locator("html[data-mila-ready='true']").waitFor();
 });
 
