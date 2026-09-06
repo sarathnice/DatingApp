@@ -29,6 +29,32 @@ test("reports a healthy staging service", async ({ page }) => {
   });
 });
 
+test("mobile phone frame fits the viewport with aligned corners", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile geometry check");
+  const frame = page.locator(".device-column.ios .compare-phone");
+  const screen = page.locator(".device-column.ios .phone-screen");
+  const grid = page.locator(".device-grid");
+
+  const [frameBox, gridBox, frameRadius, screenRadius, pageWidth] = await Promise.all([
+    frame.boundingBox(),
+    grid.boundingBox(),
+    frame.evaluate((element) => getComputedStyle(element).borderRadius),
+    screen.evaluate((element) => getComputedStyle(element).borderRadius),
+    page.evaluate(() => ({ viewport: innerWidth, scroll: document.documentElement.scrollWidth })),
+  ]);
+
+  expect(frameBox).not.toBeNull();
+  expect(gridBox).not.toBeNull();
+  expect(frameBox!.x).toBeGreaterThanOrEqual(15);
+  expect(frameBox!.x + frameBox!.width).toBeLessThanOrEqual(pageWidth.viewport - 15);
+  expect(gridBox!.width).toBeLessThanOrEqual(pageWidth.viewport);
+  expect(pageWidth.scroll).toBe(pageWidth.viewport);
+  expect(frameRadius).toBe("48px");
+  expect(screenRadius).toBe("40px");
+  expect(frameBox!.height / frameBox!.width).toBeGreaterThan(2.1);
+  expect(frameBox!.height / frameBox!.width).toBeLessThan(2.2);
+});
+
 test("opens the Mila preview and profile settings", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /A connection starts/i })).toBeVisible();
   await page

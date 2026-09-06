@@ -894,11 +894,15 @@ button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
   .page-tabs button:hover,.compact-themes button:hover,.in-app-themes button:hover { transform:translateY(-1px); border-color:var(--ui-line-strong); }
 }
 @media(max-width:760px) {
-  .compare-stage { width:100%; padding:20px 12px 40px; }
+  .compare-stage { width:100%; padding:20px 0 40px; overflow:hidden; }
+  .compare-heading,.preview-controls { margin-left:16px; margin-right:16px; }
   .compare-heading h1 { font-size:27px; }
-  .device-grid { display:flex; overflow-x:auto; width:100%; padding:14px 8px; gap:20px; scroll-snap-type:x mandatory; }
-  .device-column { flex:0 0 min(420px,calc(100vw - 42px)); scroll-snap-align:center; }
-  .compare-phone { height:820px; }
+  .device-grid { display:flex; overflow-x:auto; width:100%; padding:12px 16px 18px; gap:14px; border:0; border-radius:0; background:transparent; box-shadow:none; scroll-padding-inline:16px; scroll-snap-type:x mandatory; }
+  .device-column { flex:0 0 min(420px,calc(100vw - 32px)); scroll-snap-align:center; }
+  .compare-phone { width:100%; max-width:none; height:auto; aspect-ratio:9/19.5; padding:8px; border-radius:48px; }
+  .compare-phone .phone-screen { border-radius:40px; }
+  .compare-phone.android { padding:8px; border-radius:34px; }
+  .compare-phone.android .phone-screen { border-radius:26px; }
   .page-tabs button { padding:0 12px; }
   .profile-section-list strong { display:none; }
   .profile-section-list button { grid-template-columns:22px 1fr; }
