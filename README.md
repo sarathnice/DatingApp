@@ -42,3 +42,5 @@ Open `http://localhost:3000`. The container exposes `/api/health` for health che
 Copy `.env.example` to `.env.local` for local-only configuration. Never commit secrets.
 
 See [Production readiness](docs/PRODUCTION_READINESS.md) for the path from this product preview to live accounts, payments, messaging, moderation, and native apps.
+
+The responsive web product is available at `/web`. See [Application architecture](docs/ARCHITECTURE.md) for the 19-table data model and service boundaries.

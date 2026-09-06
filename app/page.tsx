@@ -2369,13 +2369,9 @@ export default function Home() {
         </div>
         <Button
           className="feature-link"
-          onClick={() =>
-            document
-              .getElementById("features")
-              ?.scrollIntoView({ behavior: "smooth" })
-          }
+          onClick={() => { window.location.href = "/web"; }}
         >
-          Feature plan <ChevronDown />
+          Open web app <ChevronRight />
         </Button>
       </header>
       <section className="compare-stage" id="preview">
