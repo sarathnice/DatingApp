@@ -471,6 +471,11 @@ function MobileScreen({
   const [selectedPlan, setSelectedPlan] = useState("yearly");
   const [selectedBoost, setSelectedBoost] = useState("five");
   const [purchaseNotice, setPurchaseNotice] = useState("");
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [pendingPremiumAction, setPendingPremiumAction] = useState<"intro" | null>(null);
+  const [boostCredits, setBoostCredits] = useState(0);
+  const [boostTime, setBoostTime] = useState("Now");
+  const [boostActive, setBoostActive] = useState(false);
   const [registrationStep, setRegistrationStep] = useState(0);
   const [interestedIn, setInterestedIn] = useState("Women");
   const [ageMin, setAgeMin] = useState(26);
@@ -702,12 +707,22 @@ function MobileScreen({
     setDiscoverNotice(`${label} selected · Showing your best matches`);
     onTab("discover");
   };
-  const startIntroduction = () => {
+  const openIntroductionComposer = () => {
     setIntroMessage(suggestedIntro);
     setConnectReview(true);
     setConnectPage(mediaIndex);
     setIntroComposerOpen(true);
     window.requestAnimationFrame(() => showConnectPage(mediaIndex, "auto"));
+  };
+  const startIntroduction = () => {
+    if (!hasSubscription) {
+      setPendingPremiumAction("intro");
+      setMembershipView("plans");
+      setPurchaseNotice("Mila Plus is required to send an introduction before matching.");
+      setAccountPanel("membership");
+      return;
+    }
+    openIntroductionComposer();
   };
   const sendIntroduction = () => {
     const text = introMessage.trim();
@@ -1546,7 +1561,7 @@ function MobileScreen({
                   <Crown />
                   <span>
                     <b>Membership &amp; Boosts</b>
-                    <small>Compare plans and visibility boosts</small>
+                    <small>{hasSubscription ? `Mila Plus active · ${boostCredits} Boost${boostCredits === 1 ? "" : "s"}` : "Compare plans and visibility boosts"}</small>
                   </span>
                   <ChevronRight />
                 </button>
@@ -1597,10 +1612,10 @@ function MobileScreen({
                   className={`full-connect ${connectionPending ? "is-sent" : ""}`}
                   onClick={startIntroduction}
                   disabled={connectionPending}
-                  aria-label={connectionPending ? `Connection request sent to ${profile.name}` : `Connect with ${profile.name}`}
+                  aria-label={connectionPending ? `Introduction sent to ${profile.name}` : `Send introduction to ${profile.name}`}
                 >
-                  {connectionPending ? <Check /> : <Send />}
-                  {connectionPending ? "Request sent" : "Connect"}
+                  {connectionPending ? <Check /> : hasSubscription ? <Send /> : <Crown />}
+                  {connectionPending ? "Intro sent" : "Send intro"}
                 </button>
                 {safetyOpen && (
                   <div className="safety-menu">
@@ -1682,18 +1697,35 @@ function MobileScreen({
                   <span><b>Why Mila recommends {profile.name}</b><small>{showReason ? `You both value long-term connection, ${profile.tags[0].toLowerCase()}, and an intentional pace.` : "See the profile details behind this recommendation"}</small></span>
                   <ChevronDown />
                 </button>
-                <h3>About {profile.name}</h3>
-                <p>{profile.about}</p>
-                <h3>Two truths and a tiny hill</h3>
-                <blockquote>
-                  “{profile.prompt}”
-                </blockquote>
-                <h3>Languages & life</h3>
-                <div className="full-tags">
-                  {profile.languages.map(language => <span key={language}>{language}</span>)}
-                  <span>Open to relocate</span>
-                  <span>Family-minded</span>
-                </div>
+                <section className="modern-profile-section about-profile-section">
+                  <header><span>About</span><small>In their own words</small></header>
+                  <p>{profile.about}</p>
+                </section>
+                <section className="profile-fact-grid" aria-label={`${profile.name} at a glance`}>
+                  <span><BriefcaseBusiness /><small>Work</small><b>{profile.job}</b></span>
+                  <span><GraduationCap /><small>Education</small><b>Bachelor’s degree</b></span>
+                  <span><Ruler /><small>Height</small><b>170 cm</b></span>
+                  <span><Languages /><small>Languages</small><b>{profile.languages.join(" + ")}</b></span>
+                </section>
+                <section className="modern-profile-section relationship-section">
+                  <header><span>Relationship essentials</span><small>What matters most</small></header>
+                  <div><Heart /><span><small>Looking for</small><b>Long-term relationship</b></span></div>
+                  <div><UsersRound /><span><small>Family plans</small><b>Open to children</b></span></div>
+                  <div><MessageCircle /><span><small>Communication</small><b>Balanced and direct</b></span></div>
+                  <div><Globe2 /><span><small>Relocation</small><b>Open to discuss</b></span></div>
+                </section>
+                <section className="modern-profile-section prompt-profile-section">
+                  <header><span>A personal prompt</span><small>Two truths and a tiny hill</small></header>
+                  <blockquote>“{profile.prompt}”</blockquote>
+                </section>
+                <section className="modern-profile-section lifestyle-profile-section">
+                  <header><span>Lifestyle &amp; interests</span><small>At a glance</small></header>
+                  <div className="full-tags">
+                    <span>Never smokes</span><span>Drinks socially</span><span>Enjoys pets</span>
+                    {profile.tags.map(tag => <span key={tag}>{tag}</span>)}
+                    <span>Weekend travel</span>
+                  </div>
+                </section>
               </div>
               <div className="profile-safety-actions">
                 <button onClick={shareProfile}>
@@ -1708,7 +1740,7 @@ function MobileScreen({
               </div>
               <div className="full-actions">
                 <button onClick={() => onProfileOpen(false)}>
-                  <X /> Pass
+                  <X /> Maybe later
                 </button>
                 <button
                   className={isLiked ? "is-liked" : ""}
@@ -1720,7 +1752,7 @@ function MobileScreen({
                     setProfileNotice(`Like sent to ${profile.name}`);
                   }}
                 >
-                  <Heart fill={isLiked ? "currentColor" : "none"} /> {isLiked ? "Liked" : `Like ${profile.name}`}
+                  <Heart fill={isLiked ? "currentColor" : "none"} /> {isLiked ? "Liked" : "Like"}
                 </button>
               </div>
             </section>
@@ -2010,7 +2042,7 @@ function MobileScreen({
           {accountPanel === "membership" && (
             <section className="account-panel membership-panel">
               <header className="account-panel-header">
-                <button onClick={() => setAccountPanel(null)} aria-label="Close membership"><ArrowLeft /></button>
+                <button onClick={() => { setAccountPanel(null); setPendingPremiumAction(null); }} aria-label="Close membership"><ArrowLeft /></button>
                 <span><b>Membership</b><small>Simple pricing, no hidden tiers</small></span>
                 <i className="mila-plus-mark">m+</i>
               </header>
@@ -2020,7 +2052,7 @@ function MobileScreen({
                   <button role="tab" aria-selected={membershipView === "boosts"} onClick={() => { setMembershipView("boosts"); setPurchaseNotice(""); }}>Boosts</button>
                 </div>
                 {membershipView === "plans" ? <>
-                  <div className="membership-hero"><Crown /><span><b>More control, fewer interruptions</b><small>The same core dating and safety experience remains free.</small></span></div>
+                  <div className={`membership-hero ${pendingPremiumAction === "intro" ? "paywall-hero" : ""}`}><Crown /><span><b>{pendingPremiumAction === "intro" ? "Send an introduction before matching" : hasSubscription ? "Mila Plus is active" : "More control, fewer interruptions"}</b><small>{pendingPremiumAction === "intro" ? `Choose a plan to continue your introduction to ${profile.name}. Likes and matched chats remain free.` : hasSubscription ? "Priority introductions and membership controls are ready." : "The same core dating and safety experience remains free."}</small></span></div>
                   <div className="plan-list">
                     {membershipPlans.map((plan) => <button key={plan.id} aria-pressed={selectedPlan === plan.id} onClick={() => { setSelectedPlan(plan.id); setPurchaseNotice(""); }}>
                       <i>{selectedPlan === plan.id && <Check />}</i>
@@ -2035,6 +2067,11 @@ function MobileScreen({
                   <p className="safety-free"><ShieldCheck /><span><b>Safety is never a paid feature</b><small>Block, report, verification, privacy controls and date check-ins remain free.</small></span></p>
                 </> : <>
                   <div className="membership-hero boost-hero"><Zap /><span><b>Be seen at the right time</b><small>One Boost raises your profile’s visibility nearby for 30 minutes.</small></span></div>
+                  <section className={`boost-status ${boostActive ? "is-active" : ""}`}>
+                    <div><Zap /><span><b>{boostActive ? "Boost active · 30:00" : `${boostCredits} Boost${boostCredits === 1 ? "" : "s"} available`}</b><small>{boostActive ? "Your profile is receiving priority visibility nearby." : "Buy a package, then start now or schedule it."}</small></span></div>
+                    {!boostActive && <label>Start time<NativeSelect value={boostTime} onChange={(event) => setBoostTime(event.target.value)}><NativeSelectOption>Now</NativeSelectOption><NativeSelectOption>Tonight · 7 PM</NativeSelectOption><NativeSelectOption>Tonight · 9 PM</NativeSelectOption><NativeSelectOption>Tomorrow · 7 PM</NativeSelectOption></NativeSelect></label>}
+                    <button disabled={!boostCredits || boostActive} onClick={() => { setBoostCredits((count) => Math.max(0, count - 1)); setBoostActive(true); setPurchaseNotice(boostTime === "Now" ? "Boost started for 30 minutes." : `Boost scheduled for ${boostTime}.`); }}>{boostActive ? "Boost running" : boostCredits ? (boostTime === "Now" ? "Start 30-minute Boost" : "Schedule Boost") : "Buy Boosts to continue"}</button>
+                  </section>
                   <div className="boost-list">
                     {boostPackages.map((pack) => <button key={pack.id} aria-pressed={selectedBoost === pack.id} onClick={() => { setSelectedBoost(pack.id); setPurchaseNotice(""); }}>
                       {pack.id === "five" && <em>Popular</em>}
@@ -2048,7 +2085,20 @@ function MobileScreen({
               </div>
               <footer className="purchase-footer">
                 <span><small>{membershipView === "plans" ? selectedMembershipPlan.label : `${selectedBoostPackage.count} Boosts`}</small><b>{membershipView === "plans" ? selectedMembershipPlan.total : selectedBoostPackage.price}</b></span>
-                <button onClick={() => setPurchaseNotice("Demo confirmed — no payment was charged.")}><CreditCard /> Continue</button>
+                <button disabled={membershipView === "plans" && hasSubscription && !pendingPremiumAction} onClick={() => {
+                  if (membershipView === "boosts") {
+                    setBoostCredits((count) => count + selectedBoostPackage.count);
+                    setPurchaseNotice(`${selectedBoostPackage.count} Boost${selectedBoostPackage.count === 1 ? "" : "s"} added for this preview — no payment was charged.`);
+                    return;
+                  }
+                  setHasSubscription(true);
+                  setPurchaseNotice("Mila Plus activated for this preview — no payment was charged.");
+                  if (pendingPremiumAction === "intro") {
+                    setPendingPremiumAction(null);
+                    setAccountPanel(null);
+                    window.setTimeout(openIntroductionComposer, 0);
+                  }
+                }}><CreditCard /> {membershipView === "plans" ? (hasSubscription ? "Active" : "Continue") : "Add Boosts"}</button>
               </footer>
             </section>
           )}
@@ -2189,6 +2239,15 @@ function MobileScreen({
                     <div>
                       <button onClick={() => setIntroDraft(false)}>Discard</button>
                       <button onClick={() => {
+                        if (!hasSubscription) {
+                          setIntroDraft(false);
+                          setVoiceOpen(false);
+                          setPendingPremiumAction("intro");
+                          setMembershipView("plans");
+                          setPurchaseNotice("Mila Plus is required to send an introduction before matching.");
+                          setAccountPanel("membership");
+                          return;
+                        }
                         onSendIntro(viewerName, profile.name, suggestedIntro);
                         setIntroSent(true);
                         setIntroDraft(false);
