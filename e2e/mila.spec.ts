@@ -18,6 +18,18 @@ test("discover spaces are visually grouped and open a matching feed", async ({ p
 
   await page.getByRole("button", { name: /New nearby/ }).first().click();
   await expect(page.getByRole("status").first()).toContainText("New nearby selected");
+  await expect(page.getByText("Nearby · 1 profile", { exact: true }).first()).toBeVisible();
+
+  await page.getByRole("button", { name: "Change distance from 5 miles" }).first().click();
+  await expect(page.getByRole("status").first()).toContainText("Within 10 mi · 3 profiles");
+  await expect(page.getByText("Nearby · 3 profiles", { exact: true }).first()).toBeVisible();
+
+  await page.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Discover" }).click();
+  await page.getByRole("button", { name: /Across borders/ }).first().click();
+  await expect(page.getByRole("status").first()).toContainText("Across borders selected · 3 profiles");
+  await expect(page.getByText("Across borders · 3 profiles", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Toronto, Canada · Across borders", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Switch to nearby profiles" }).first()).toContainText("Worldwide");
 });
 
 test("reports a healthy staging service", async ({ page }) => {

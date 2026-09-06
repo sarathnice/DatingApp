@@ -88,13 +88,16 @@ type Tab = "discover" | "explore" | "likes" | "chats" | "you";
 type Platform = "ios" | "android";
 type AccountPanel = "settings" | "preferences" | "membership" | "registration" | "mila-lab" | null;
 type WomanProfileId = "maya" | "priya" | "hana";
+type DemoProfileId = "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo" | "sofia" | "amira" | "yuki" | "ravi" | "theo" | "mateo";
 type DemoProfile = {
-  id: "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo";
+  id: DemoProfileId;
+  photoId?: "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo";
   name: string;
   age: number;
   job: string;
   city: string;
   distance: number;
+  distanceLabel?: string;
   languages: string[];
   tags: string[];
   about: string;
@@ -224,11 +227,52 @@ const demoProfiles: Record<DemoProfile["id"], DemoProfile> = {
     about: "Literary editor, patient home cook and regular at independent bookshops around Brooklyn.",
     prompt: "I make a very good tortilla española and maintain an unnecessarily detailed reading list.",
   },
+  sofia: {
+    id: "sofia", photoId: "maya", name: "Sofia", age: 30, job: "Service designer", city: "Toronto, Canada", distance: 356,
+    distanceLabel: "Across borders", languages: ["English", "Portuguese"], tags: ["Film festivals", "Long-term"],
+    about: "Service designer who collects neighborhood stories, plans trips around film festivals and always finds the best small coffee shop.",
+    prompt: "Tell me which city you would revisit tomorrow and the meal you would order first.",
+  },
+  amira: {
+    id: "amira", photoId: "priya", name: "Amira", age: 31, job: "Public health researcher", city: "London, UK", distance: 3460,
+    distanceLabel: "Across borders", languages: ["English", "Arabic"], tags: ["Museum Sundays", "Marriage-minded"],
+    about: "Public health researcher, curious traveler and enthusiastic host of long Sunday lunches with friends from everywhere.",
+    prompt: "My favorite way to know a place is through its markets, museums and family recipes.",
+  },
+  yuki: {
+    id: "yuki", photoId: "hana", name: "Yuki", age: 29, job: "Documentary editor", city: "Tokyo, Japan", distance: 6740,
+    distanceLabel: "Across borders", languages: ["Japanese", "English"], tags: ["Documentaries", "Slow travel"],
+    about: "Documentary editor who loves quiet listening bars, early train journeys and conversations that make the world feel smaller.",
+    prompt: "I will trade you one hidden Tokyo favorite for one place that matters to you.",
+  },
+  ravi: {
+    id: "ravi", photoId: "arjun", name: "Ravi", age: 32, job: "Renewable energy lead", city: "Vancouver, Canada", distance: 2420,
+    distanceLabel: "Across borders", languages: ["English", "Hindi"], tags: ["Mountain weekends", "Long-term"],
+    about: "Renewable energy lead who spends weekends near the mountains and cooks an ambitious dinner after every hike.",
+    prompt: "Choose our first adventure: a coastal trail, a tiny restaurant or a live show.",
+  },
+  theo: {
+    id: "theo", photoId: "marcus", name: "Theo", age: 33, job: "Urban architect", city: "Paris, France", distance: 3630,
+    distanceLabel: "Across borders", languages: ["French", "English"], tags: ["Architecture", "Live jazz"],
+    about: "Urban architect, amateur pianist and patient explorer of old streets, new ideas and very small music venues.",
+    prompt: "I can plan a walk around a city, but the best part should be unplanned.",
+  },
+  mateo: {
+    id: "mateo", photoId: "leo", name: "Mateo", age: 31, job: "Publishing editor", city: "Mexico City, Mexico", distance: 2090,
+    distanceLabel: "Across borders", languages: ["Spanish", "English"], tags: ["Bookshops", "Home cooking"],
+    about: "Publishing editor, home cook and regular at independent bookshops who believes translation brings people closer.",
+    prompt: "Bring a favorite book; I will bring the tacos and a walking route.",
+  },
 };
 
 const discoveryProfiles: Record<Platform, DemoProfile[]> = {
   ios: [demoProfiles.maya, demoProfiles.priya, demoProfiles.hana],
   android: [demoProfiles.arjun, demoProfiles.marcus, demoProfiles.leo],
+};
+
+const globalDiscoveryProfiles: Record<Platform, DemoProfile[]> = {
+  ios: [demoProfiles.sofia, demoProfiles.amira, demoProfiles.yuki],
+  android: [demoProfiles.ravi, demoProfiles.theo, demoProfiles.mateo],
 };
 
 const scenarioWomen = [demoProfiles.maya, demoProfiles.priya, demoProfiles.hana] as const;
@@ -438,6 +482,7 @@ function MobileScreen({
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
   const [discoveryIndex, setDiscoveryIndex] = useState(0);
+  const [discoveryMode, setDiscoveryMode] = useState<"nearby" | "global" | "intent">("nearby");
   const [discoveryHistory, setDiscoveryHistory] = useState<number[]>([]);
   const [cardDecision, setCardDecision] = useState<"idle" | "liked" | "passed" | "intro">("idle");
   const [discoverNotice, setDiscoverNotice] = useState("");
@@ -564,8 +609,20 @@ function MobileScreen({
     interests: string[];
     astrology: boolean;
   } | null>(null);
-  const queue = discoveryProfiles[platform];
-  const profile = queue[discoveryIndex] || initialProfile;
+  const localQueue = discoveryProfiles[platform];
+  const strictNearbyQueue = localQueue.filter((person) => person.distance <= radius);
+  const selectedLocalProfile = localQueue.find((person) => person.id === initialProfile.id);
+  const nearbyQueue = selectedLocalProfile && !strictNearbyQueue.some((person) => person.id === selectedLocalProfile.id)
+    ? [selectedLocalProfile, ...strictNearbyQueue]
+    : strictNearbyQueue;
+  const queue = discoveryMode === "global"
+    ? globalDiscoveryProfiles[platform]
+    : discoveryMode === "nearby"
+      ? (nearbyQueue.length ? nearbyQueue : [localQueue[0]])
+      : localQueue;
+  const safeDiscoveryIndex = queue.length ? discoveryIndex % queue.length : 0;
+  const profile = queue[safeDiscoveryIndex] || initialProfile;
+  const profilePhotoId = profile.photoId ?? profile.id;
   useEffect(() => {
     const nextIndex = queue.findIndex((person) => person.id === initialProfile.id);
     setDiscoveryIndex(nextIndex >= 0 ? nextIndex : 0);
@@ -739,12 +796,33 @@ function MobileScreen({
       }, 0);
     }
   };
-  const cycleRadius = () =>
-    onRadius(radius === 5 ? 10 : radius === 10 ? 25 : 5);
-  const openExploreFeed = (label: string) => {
+  const cycleRadius = () => {
+    if (discoveryMode === "global") {
+      setDiscoveryMode("nearby");
+      setDiscoveryIndex(0);
+      onMediaIndex(0);
+      setDiscoverNotice("Nearby selected · Using your distance preference");
+      return;
+    }
+    const nextRadius = radius === 5 ? 10 : radius === 10 ? 25 : 5;
+    onRadius(nextRadius);
+    setDiscoveryMode("nearby");
     setDiscoveryIndex(0);
     onMediaIndex(0);
-    setDiscoverNotice(`${label} selected · Showing your best matches`);
+    const nextCount = localQueue.filter((person) => person.distance <= nextRadius).length;
+    setDiscoverNotice(`Within ${nextRadius} mi · ${nextCount || 1} profile${nextCount === 1 ? "" : "s"}`);
+  };
+  const openExploreFeed = (label: string) => {
+    const nextMode = label === "Across borders" ? "global" : label === "New nearby" ? "nearby" : "intent";
+    setDiscoveryMode(nextMode);
+    setDiscoveryIndex(0);
+    onMediaIndex(0);
+    const resultCount = nextMode === "global"
+      ? globalDiscoveryProfiles[platform].length
+      : nextMode === "nearby"
+        ? Math.max(1, nearbyQueue.length)
+        : localQueue.length;
+    setDiscoverNotice(`${label} selected · ${resultCount} profile${resultCount === 1 ? "" : "s"}`);
     onTab("discover");
   };
   const openIntroductionComposer = () => {
@@ -822,7 +900,7 @@ function MobileScreen({
         setVoiceStep("messages");
         answerVoice("Would you like me to read your messages aloud? Only continue if you are comfortable hearing them here.");
       } else {
-        answerVoice(`${profile.name}, ${profile.age}. ${profile.job}, in ${profile.city}, ${profile.distance} miles away. ${profile.about} Would you like to like this profile, draft an introduction, hear the next profile, or go to messages?`);
+        answerVoice(`${profile.name}, ${profile.age}. ${profile.job}, in ${profile.city}, ${profile.distanceLabel ?? `${profile.distance} miles away`}. ${profile.about} Would you like to like this profile, draft an introduction, hear the next profile, or go to messages?`);
       }
     } else if (voiceStep === "messages") {
       const incoming = messages.filter(message => message.sender !== viewerName);
@@ -983,7 +1061,7 @@ function MobileScreen({
                         suppressClick.current = false;
                       }}
                     >
-                    <div className={`profile-image profile-${profile.id} media-${mediaIndex}`}>
+                    <div className={`profile-image profile-${profilePhotoId} media-${mediaIndex}`}>
                         <div className="story-dots">
                           {[0, 1, 2, 3].map((i) => (
                             <i
@@ -994,10 +1072,17 @@ function MobileScreen({
                         </div>
                         <div className="nearby-on-photo">
                           <span>
-                            <LocateFixed /> {calmMode ? "Calm pick · Nearby" : `Nearby · ${queue.length} profiles`}
+                            {discoveryMode === "global" ? <Globe2 /> : <LocateFixed />}
+                            {calmMode
+                              ? `Calm pick · ${discoveryMode === "global" ? "Worldwide" : "Nearby"}`
+                              : discoveryMode === "global"
+                                ? `Across borders · ${queue.length} profiles`
+                                : discoveryMode === "intent"
+                                  ? `For you · ${queue.length} profiles`
+                                  : `Nearby · ${queue.length} profile${queue.length === 1 ? "" : "s"}`}
                           </span>
-                          <button onClick={cycleRadius}>
-                            Within {radius} mi <ChevronDown />
+                          <button onClick={cycleRadius} aria-label={discoveryMode === "global" ? "Switch to nearby profiles" : `Change distance from ${radius} miles`}>
+                            {discoveryMode === "global" ? "Worldwide" : `Within ${radius} mi`} <ChevronDown />
                           </button>
                         </div>
                         <span className="verified-pill">
@@ -1037,7 +1122,7 @@ function MobileScreen({
                             <BriefcaseBusiness /> {profile.job}
                           </p>
                           <p>
-                            <MapPin /> {profile.city} · {profile.distance} miles away
+                            <MapPin /> {profile.city} · {profile.distanceLabel ?? `${profile.distance} miles away`}
                           </p>
                           <div className="profile-tags">
                             <span>Long-term</span>
@@ -1083,7 +1168,7 @@ function MobileScreen({
                     {introComposerOpen && (
                       <div className={`intro-composer ${connectReview ? "connect-review" : ""}`} role="dialog" aria-modal="true" aria-labelledby={`${platform}-intro-title`}>
                         {connectReview && <button className="connect-close" onClick={() => { setIntroComposerOpen(false); setConnectReview(false); }} aria-label="Close connection composer"><X /></button>}
-                        <span className={`intro-avatar profile-${profile.id}`} />
+                        <span className={`intro-avatar profile-${profilePhotoId}`} />
                         <div>
                           <small>{connectReview ? "First impression" : "Meaningful introduction"}</small>
                           <h3 id={`${platform}-intro-title`}>{connectReview ? `Connect with ${profile.name}` : `Message ${profile.name}`}</h3>
@@ -1148,7 +1233,7 @@ function MobileScreen({
                               {connectMoments.map((moment, index) => (
                                 <article
                                   key={moment.label}
-                                  className={`connect-page connect-page-${index} ${index < 4 ? `connect-page-media profile-${profile.id} media-${index}` : ""}`}
+                                  className={`connect-page connect-page-${index} ${index < 4 ? `connect-page-media profile-${profilePhotoId} media-${index}` : ""}`}
                                   aria-label={`${moment.label}, page ${index + 1} of ${connectMoments.length}`}
                                 >
                                   {index < 4 && <div>{index === 3 && <Play className="connect-video-icon" fill="currentColor" />}<b>{profile.name}, {profile.age}</b><small>{index === 3 ? "Video prompt · tap for the next page" : "Tap for next · or swipe"}</small></div>}
@@ -1319,7 +1404,7 @@ function MobileScreen({
                     )}
                     {targetLikedYou && (
                       <button className="like-person incoming-target">
-                        <span className={`like-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
+                        <span className={`like-avatar target-mini profile-${profilePhotoId}`}>{profile.name[0]}</span>
                         <span>
                           <b>{profile.name}, {profile.age}</b>
                           <small>{matched ? "It’s a match — chat is open" : "Liked you just now"}</small>
@@ -1329,10 +1414,10 @@ function MobileScreen({
                     )}
                     <div className="people-photo-grid">
                       {queue.map((person, index) => (
-                        <button className={`people-photo profile-${person.id} media-0`} key={person.id}
+                        <button className={`people-photo profile-${person.photoId ?? person.id} media-0`} key={person.id}
                           onClick={() => { setDiscoveryIndex(index); onMediaIndex(0); onProfileOpen(true); }}
                           aria-label={`View ${person.name}'s profile`}>
-                          <span className="people-photo-copy"><b>{person.name}, {person.age}</b><small>{person.city} · {person.distance} mi</small></span>
+                          <span className="people-photo-copy"><b>{person.name}, {person.age}</b><small>{person.city} · {person.distanceLabel ?? `${person.distance} mi`}</small></span>
                           <span className="people-photo-open"><ArrowLeft /></span>
                         </button>
                       ))}
@@ -1358,7 +1443,7 @@ function MobileScreen({
                       const likedProfile = demoProfiles[profileId];
                       const savedLikedProfile = favoriteIds.includes(profileId);
                       return <div className="like-person" key={profileId}>
-                        <span className={`like-avatar target-mini profile-${profileId}`}>{likedProfile.name[0]}</span>
+                        <span className={`like-avatar target-mini profile-${likedProfile.photoId ?? likedProfile.id}`}>{likedProfile.name[0]}</span>
                         <span><b>{likedProfile.name}, {likedProfile.age}</b><small>Liked just now · Awaiting response</small></span>
                         <button className="save-person" onClick={() => toggleFavorite(profileId)}
                           aria-label={savedLikedProfile ? `Remove ${likedProfile.name} from favorites` : `Save ${likedProfile.name} to favorites`}>
@@ -1387,7 +1472,7 @@ function MobileScreen({
                       favoriteIds.map((profileId) => {
                         const favoriteProfile = demoProfiles[profileId];
                         return <div className="like-person" key={profileId}>
-                          <span className={`like-avatar target-mini profile-${profileId}`}>{favoriteProfile.name[0]}</span>
+                          <span className={`like-avatar target-mini profile-${favoriteProfile.photoId ?? favoriteProfile.id}`}>{favoriteProfile.name[0]}</span>
                           <span><b>{favoriteProfile.name}, {favoriteProfile.age}</b><small>Saved privately · {favoriteProfile.city}</small></span>
                           <button className="save-person" onClick={() => toggleFavorite(profileId)} aria-label={`Remove ${favoriteProfile.name} from favorites`}>
                             <Bookmark fill="currentColor" />
@@ -1414,7 +1499,7 @@ function MobileScreen({
                 <h2>Chats</h2>
                 <h3 className="section-title">New connections</h3>
                 <div className="new-matches">
-                  <span className={`mini-avatar target-mini profile-${profile.id}`}>{profile.name[0]}</span>
+                  <span className={`mini-avatar target-mini profile-${profilePhotoId}`}>{profile.name[0]}</span>
                   <span className="mini-avatar alt">A</span>
                   <button onClick={() => onTab("likes")} aria-label="View new connections">
                     <Heart /> New match
@@ -1674,7 +1759,7 @@ function MobileScreen({
           </div>
           {profileOpen && (
             <section className="full-profile">
-              <div className={`full-profile-hero profile-${profile.id} media-${mediaIndex}`}>
+              <div className={`full-profile-hero profile-${profilePhotoId} media-${mediaIndex}`}>
                 <div className="story-dots" aria-label={`${mediaIndex + 1} of 4 media items`}>
                   {[0, 1, 2, 3].map((index) => <i key={index} className={mediaIndex === index ? "active" : ""} />)}
                 </div>
@@ -1756,7 +1841,7 @@ function MobileScreen({
                   <h2>{profile.name}, {profile.age}</h2>
                   <BadgeCheck />
                   <p>
-                    <MapPin /> {profile.city} · {profile.distance} miles away
+                    <MapPin /> {profile.city} · {profile.distanceLabel ?? `${profile.distance} miles away`}
                   </p>
                 </div>
               </div>
