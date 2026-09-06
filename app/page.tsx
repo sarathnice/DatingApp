@@ -929,8 +929,8 @@ function MobileScreen({
             <button aria-label="Search">
               <Search />
             </button>
-            <button aria-label="Settings" onClick={() => onTab("you")}>
-              <Settings2 />
+            <button aria-label="Discovery filters" onClick={() => setAccountPanel("preferences")}>
+              <SlidersHorizontal />
             </button>
           </div>
           <div className="screen-content">

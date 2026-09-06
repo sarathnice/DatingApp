@@ -39,6 +39,19 @@ test("opens the Mila preview and profile settings", async ({ page }) => {
   await expect(page.getByText("Discovery preferences").first()).toBeVisible();
 });
 
+test("header filter shortcut opens preferences and keeps changes", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  await ios.getByRole("button", { name: "Discovery filters" }).click();
+  await expect(ios.getByText("Find people who fit your life")).toBeVisible();
+
+  await ios.getByRole("slider", { name: "Maximum distance" }).fill("24");
+  await ios.getByRole("combobox").first().selectOption("Everyone");
+  await ios.getByRole("button", { name: "Save" }).click();
+
+  await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Profile" }).click();
+  await expect(ios.getByText(/24 mi · Ages .* · Everyone/)).toBeVisible();
+});
+
 test("settings hub covers account, discovery, safety, and notifications", async ({ page }) => {
   const ios = page.locator(".device-column.ios");
   await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Profile" }).click();
