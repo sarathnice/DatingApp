@@ -87,7 +87,8 @@ type Theme = (typeof themes)[number]["id"];
 type Tab = "discover" | "explore" | "likes" | "chats" | "you";
 type Platform = "ios" | "android";
 type AccountPanel = "settings" | "preferences" | "membership" | "registration" | "mila-lab" | "search" | null;
-type WomanProfileId = "maya" | "priya" | "hana";
+type WomanProfileId = "maya" | "priya" | "hana" | "sofia";
+type ManProfileId = "arjun" | "marcus" | "leo" | "ravi";
 type DemoProfileId = "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo" | "sofia" | "amira" | "yuki" | "ravi" | "theo" | "mateo";
 type DiscoveryMode = "nearby" | "global" | "longterm" | "week" | "culture" | "voice" | "search";
 type DemoProfile = {
@@ -306,7 +307,8 @@ const discoveryModeLabels: Record<DiscoveryMode, string> = {
   search: "Search results",
 };
 
-const scenarioWomen = [demoProfiles.maya, demoProfiles.priya, demoProfiles.hana] as const;
+const scenarioWomen = [demoProfiles.maya, demoProfiles.priya, demoProfiles.hana, demoProfiles.sofia] as const;
+const scenarioMen = [demoProfiles.arjun, demoProfiles.marcus, demoProfiles.leo, demoProfiles.ravi] as const;
 
 const interestOptions = [
   "Travel",
@@ -515,7 +517,7 @@ function MobileScreen({
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
   const [discoveryIndex, setDiscoveryIndex] = useState(0);
-  const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>("nearby");
+  const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>(initialProfile.distance > 100 ? "global" : "nearby");
   const [discoveryHistory, setDiscoveryHistory] = useState<Array<{
     index: number;
     profileId: DemoProfile["id"];
@@ -611,17 +613,17 @@ function MobileScreen({
   const [pauseLength, setPauseLength] = useState("Not paused");
   useEffect(() => {
     try {
-      const stored = window.localStorage.getItem(`mila-liked-${platform}`);
+      const stored = window.localStorage.getItem(`mila-liked-${platform}-${viewerName}`);
       if (stored) setLikedProfileIds(JSON.parse(stored));
     } catch {}
     setLikesLoaded(true);
-  }, [platform]);
+  }, [platform, viewerName]);
   useEffect(() => {
     if (!likesLoaded) return;
-    window.localStorage.setItem(`mila-liked-${platform}`, JSON.stringify(likedProfileIds));
-  }, [likedProfileIds, likesLoaded, platform]);
+    window.localStorage.setItem(`mila-liked-${platform}-${viewerName}`, JSON.stringify(likedProfileIds));
+  }, [likedProfileIds, likesLoaded, platform, viewerName]);
   const [birthDate, setBirthDate] = useState("1994-10-08");
-  const [gender, setGender] = useState("Non-binary");
+  const [gender, setGender] = useState(platform === "ios" ? "Man" : "Woman");
   const [showGender, setShowGender] = useState(true);
   const [height, setHeight] = useState("170");
   const [about, setAbout] = useState(
@@ -2705,6 +2707,7 @@ function MobileScreen({
 export default function Home() {
   const [theme, setTheme] = useState<Theme>("sunrise");
   const [selectedWomanId, setSelectedWomanId] = useState<WomanProfileId>("maya");
+  const [selectedManId, setSelectedManId] = useState<ManProfileId>("arjun");
   const [activeTab, setActiveTab] = useState<Tab>("discover");
   const [decisionIos, setDecisionIos] = useState<
     "idle" | "liked" | "passed" | "intro"
@@ -2727,6 +2730,7 @@ export default function Home() {
   const [introRequest, setIntroRequest] = useState<IntroRequest | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const selectedWoman = demoProfiles[selectedWomanId];
+  const selectedMan = demoProfiles[selectedManId];
   useEffect(() => {
     document.documentElement.dataset.milaReady = "true";
     return () => {
@@ -2750,8 +2754,11 @@ export default function Home() {
       { id: `message-${Date.now()}-${items.length}`, sender, text: text.trim() },
     ]);
   };
-  const selectScenario = (profileId: WomanProfileId) => {
+  const selectScenario = (profileId: WomanProfileId, manId: ManProfileId = selectedManId) => {
     setSelectedWomanId(profileId);
+    setSelectedManId(manId);
+    setHiddenIos(false);
+    setHiddenAndroid(false);
     setDecisionIos("idle");
     setDecisionAndroid("idle");
     setIntroRequest(null);
@@ -2810,16 +2817,27 @@ export default function Home() {
           </h1>
           <p>
             Explore the mobile preview. Switch pages and themes, browse profiles,
-            and test introductions between Arjun, Maya, Priya and Hana.
+            and test introductions with 4 male and 4 female demo identities.
+            Choose a pair below. Switching pairs resets the conversation; no real members are contacted.
           </p>
         </div>
         <div className="preview-controls">
           <div className="control-group scenario-control">
-            <span>Profile scenario</span>
+            <span>Male test profiles · 4</span>
+            <div className="scenario-tabs" role="group" aria-label="Male test profiles">
+              {scenarioMen.map((person) => (
+                <button key={person.id} onClick={() => selectScenario(selectedWomanId, person.id as ManProfileId)} aria-pressed={selectedManId === person.id}>
+                  <i className={`profile-${person.photoId ?? person.id}`} /> {person.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="control-group scenario-control">
+            <span>Female test profiles · 4 · choose your pairing</span>
             <div className="scenario-tabs" role="group" aria-label="Test profile scenario">
               {scenarioWomen.map((person) => (
                 <button key={person.id} onClick={() => selectScenario(person.id as WomanProfileId)} aria-pressed={selectedWomanId === person.id}>
-                  <i className={`profile-${person.id}`} /> Arjun + {person.name}
+                  <i className={`profile-${person.photoId ?? person.id}`} /> {selectedMan.name} + {person.name}
                 </button>
               ))}
             </div>
@@ -2864,9 +2882,9 @@ export default function Home() {
         </div>
         <div className="device-grid">
           <MobileScreen
-            key={`ios-${selectedWomanId}`}
+            key={`ios-${selectedManId}-${selectedWomanId}`}
             platform="ios"
-            viewerName="Arjun"
+            viewerName={selectedMan.name}
             profile={selectedWoman}
             decision={decisionIos}
             onDecision={setDecisionIos}
@@ -2885,10 +2903,10 @@ export default function Home() {
             {...sharedPreview}
           />
           <MobileScreen
-            key={`android-${selectedWomanId}`}
+            key={`android-${selectedManId}-${selectedWomanId}`}
             platform="android"
             viewerName={selectedWoman.name}
-            profile={demoProfiles.arjun}
+            profile={selectedMan}
             decision={decisionAndroid}
             onDecision={setDecisionAndroid}
             matched={matched}
@@ -2908,7 +2926,7 @@ export default function Home() {
         </div>
         <div className="platform-notes">
           <div>
-            <strong>Step 1 · Arjun messages {selectedWoman.name}</strong>
+            <strong>Step 1 · {selectedMan.name} messages {selectedWoman.name}</strong>
             <span>
               Tap the star on iPhone, personalize the introduction, and send
               it for {selectedWoman.name} to review.
@@ -2917,7 +2935,7 @@ export default function Home() {
           <div>
             <strong>Step 2 · {selectedWoman.name} accepts and replies</strong>
             <span>
-              Open Requests on Android, accept Arjun’s introduction, and reply
+              Open Requests on Android, accept {selectedMan.name}’s introduction, and reply
               from the shared conversation.
             </span>
           </div>
