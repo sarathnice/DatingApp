@@ -68,7 +68,7 @@ const themes = [
     id: "midnight",
     name: "Midnight",
     note: "Premium & cinematic",
-    color: "#ff9f0a",
+    color: "#000000",
   },
   { id: "paper", name: "Evergreen", note: "Minimal & direct", color: "#147d64" },
 ] as const;
