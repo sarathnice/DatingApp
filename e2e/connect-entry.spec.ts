@@ -4,6 +4,7 @@ test("home Connect icon is prominent and readable", async ({ page }) => {
   await page.goto("/");
   await page.locator("html[data-mila-ready=true]").waitFor();
   const connect = page.locator(".device-column.ios").getByRole("button", { name: "Connect with Maya", exact: true });
+  await expect(connect.locator("svg")).toHaveClass(/lucide-handshake/);
   const styles = await connect.evaluate((element) => {
     const button = getComputedStyle(element);
     const icon = getComputedStyle(element.querySelector("svg")!);
@@ -23,6 +24,9 @@ for (const entry of ["Connect with Maya", "Connect with Maya about their story",
     await phone.getByRole("button", { name: "View Maya's full profile" }).click();
     const full = phone.locator(".full-profile");
     await expect(full.getByRole("button", { name: /^Connect with Maya/ })).toHaveCount(3);
+    for (const button of await full.getByRole("button", { name: /^Connect with Maya/ }).all()) {
+      await expect(button.locator("svg")).toHaveClass(/lucide-handshake/);
+    }
     await full.screenshot({ path: info.outputPath("full-profile.png") });
     await full.getByRole("button", { name: entry, exact: true }).click();
     await expect(phone.getByText("Send an introduction before matching", { exact: true })).toBeVisible();

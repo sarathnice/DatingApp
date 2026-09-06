@@ -25,6 +25,7 @@ import {
   FileText,
   Globe2,
   GraduationCap,
+  Handshake,
   Heart,
   Languages,
   LocateFixed,
@@ -1239,7 +1240,7 @@ function MobileScreen({
                             aria-label={`Connect with ${profile.name}`}
                             onClick={startIntroduction}
                           >
-                            <UserPlus />
+                            <Handshake />
                             <span>Connect</span>
                           </button>
                           <button
@@ -1876,7 +1877,7 @@ function MobileScreen({
                   disabled={connectionPending}
                   aria-label={connectionPending ? `Connection sent to ${profile.name}` : `Connect with ${profile.name}`}
                 >
-                  {connectionPending ? <Check /> : <UserPlus />}
+                  {connectionPending ? <Check /> : <Handshake />}
                   {connectionPending ? "Request sent" : "Connect"}
                 </button>
                 {safetyOpen && (
@@ -1968,7 +1969,7 @@ function MobileScreen({
                 <section className="modern-profile-section about-profile-section">
                   <header><span>About</span><small>In their own words</small></header>
                   <p>{profile.about}</p>
-                  <button className="profile-connect-link" onClick={startIntroduction} disabled={connectionPending} aria-label={`Connect with ${profile.name} about their story`}><UserPlus /> {connectionPending ? "Request sent" : "Connect"}</button>
+                  <button className="profile-connect-link" onClick={startIntroduction} disabled={connectionPending} aria-label={`Connect with ${profile.name} about their story`}><Handshake /> {connectionPending ? "Request sent" : "Connect"}</button>
                 </section>
                 <section className="profile-fact-grid" aria-label={`${profile.name} at a glance`}>
                   <span><BriefcaseBusiness /><small>Work</small><b>{profile.job}</b></span>
@@ -2008,7 +2009,7 @@ function MobileScreen({
                 </button>
               </div>
               <div className="full-actions">
-                <button className="profile-connect-link" onClick={startIntroduction} disabled={connectionPending} aria-label={`Connect with ${profile.name} from profile actions`}><UserPlus /> {connectionPending ? "Request sent" : "Connect"}</button>
+                <button className="profile-connect-link" onClick={startIntroduction} disabled={connectionPending} aria-label={`Connect with ${profile.name} from profile actions`}><Handshake /> {connectionPending ? "Request sent" : "Connect"}</button>
                 <button onClick={() => onProfileOpen(false)}>
                   <X /> Maybe later
                 </button>
