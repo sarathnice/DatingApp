@@ -22,7 +22,7 @@ test("web discovery supports profile selection, favorite, and like", async ({ pa
 });
 
 test("web introduction explains the subscription gate", async ({ page }) => {
-  await page.getByRole("button", { name: "Send intro" }).click();
+  await page.getByRole("button", { name: "Connect", exact: true }).click();
   await expect(page.getByRole("heading", { name: /Meet Maya with an introduction/i })).toBeVisible();
   await expect(page.getByText(/included with Mila Plus/i)).toBeVisible();
   await page.getByRole("button", { name: "View Mila Plus" }).click();
