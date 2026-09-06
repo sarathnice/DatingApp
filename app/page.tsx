@@ -882,11 +882,6 @@ function MobileScreen({
             {activeTab === "discover" && (
               <div className="discover-screen">
                 {discoverNotice && <div className="discover-notice" role="status"><Check /> {discoverNotice}</div>}
-                <div className="today-bar" aria-label="Today at a glance">
-                  <span><Sparkles /><b>Today</b><small>{calmMode ? "1 calm pick" : `${queue.length} picks`}</small></span>
-                  <button className="today-likes" onClick={() => onTab("likes")}><Heart /> Likes</button>
-                  <button className="today-messages" onClick={() => onTab("chats")}><MessageCircle /> Messages</button>
-                </div>
                 {blocked ? (
                   <div className="blocked-state">
                     <span>
@@ -944,7 +939,7 @@ function MobileScreen({
                         </div>
                         <div className="nearby-on-photo">
                           <span>
-                            <LocateFixed /> Nearby · {queue.length} profiles
+                            <LocateFixed /> {calmMode ? "Calm pick · Nearby" : `Nearby · ${queue.length} profiles`}
                           </span>
                           <button onClick={cycleRadius}>
                             Within {radius} mi <ChevronDown />
@@ -1513,7 +1508,7 @@ function MobileScreen({
                 </div>
                 <div className="calm-mode-card">
                   <Sparkles />
-                  <span><b>Calm Mode</b><small>{calmMode ? "One thoughtful recommendation each day" : "Choose a smaller daily set of profiles"}</small></span>
+                  <span><b>Calm Mode</b><small>{calmMode ? "On · One thoughtful recommendation at a time" : "Off · Browse the full recommendation queue"}</small></span>
                   <Switch size="sm" checked={calmMode} onCheckedChange={setCalmMode} aria-label="Calm Mode" />
                 </div>
                 <h3>Choose your look</h3>
