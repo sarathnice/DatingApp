@@ -514,7 +514,11 @@ function MobileScreen({
   const [dragY, setDragY] = useState(0);
   const [discoveryIndex, setDiscoveryIndex] = useState(0);
   const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>("nearby");
-  const [discoveryHistory, setDiscoveryHistory] = useState<number[]>([]);
+  const [discoveryHistory, setDiscoveryHistory] = useState<Array<{
+    index: number;
+    profileId: DemoProfile["id"];
+    action: "liked" | "passed" | "intro" | "next";
+  }>>([]);
   const [cardDecision, setCardDecision] = useState<"idle" | "liked" | "passed" | "intro">("idle");
   const [discoverNotice, setDiscoverNotice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -783,7 +787,11 @@ function MobileScreen({
         current.includes(profile.id) ? current : [...current, profile.id],
       );
     }
-    setDiscoveryHistory((items) => [...items, discoveryIndex]);
+    setDiscoveryHistory((items) => [...items, {
+      index: discoveryIndex,
+      profileId: profile.id,
+      action,
+    }]);
     if (action !== "next") onDecision(action);
     setCardDecision(action === "next" ? "idle" : action);
     setDiscoverNotice(
@@ -798,15 +806,28 @@ function MobileScreen({
     }, action === "liked" ? 700 : action === "intro" ? 500 : 260);
   };
   const undoProfile = () => {
+    if (isLiked) {
+      setLikedProfileIds((current) => current.filter((id) => id !== profile.id));
+      setDiscoveryHistory((items) => {
+        const previous = items.at(-1);
+        return previous?.profileId === profile.id && previous.action === "liked"
+          ? items.slice(0, -1)
+          : items;
+      });
+      onDecision("idle");
+      setCardDecision("idle");
+      setDiscoverNotice(`Like removed from ${profile.name}`);
+      return;
+    }
     const previous = discoveryHistory.at(-1);
     if (previous === undefined) {
       setDiscoverNotice("Nothing to undo yet");
       return;
     }
-    setDiscoveryIndex(previous);
-    const previousProfile = queue[previous];
-    if (previousProfile) {
-      setLikedProfileIds((current) => current.filter((id) => id !== previousProfile.id));
+    const restoredIndex = queue.findIndex((person) => person.id === previous.profileId);
+    setDiscoveryIndex(restoredIndex >= 0 ? restoredIndex : previous.index);
+    if (previous.action === "liked") {
+      setLikedProfileIds((current) => current.filter((id) => id !== previous.profileId));
     }
     setDiscoveryHistory((items) => items.slice(0, -1));
     onDecision("idle");

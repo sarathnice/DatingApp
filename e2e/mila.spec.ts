@@ -279,6 +279,23 @@ test("browses profile media and remembers a like during the session", async ({ p
   await expect(page.locator(".full-profile").first().getByRole("button", { name: "Liked", exact: true })).toBeDisabled();
 });
 
+test("undo removes Maya's persisted like after revisiting the app", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+
+  await ios.getByRole("button", { name: "Like Maya" }).click();
+  await expect(ios.getByRole("button", { name: "Maya liked" })).toBeDisabled();
+  await page.waitForTimeout(800);
+
+  await page.reload();
+  await expect(ios.getByRole("button", { name: "Maya liked" })).toBeDisabled();
+  await ios.getByRole("button", { name: "Undo" }).click();
+  await expect(ios.getByText("Like removed from Maya")).toBeVisible();
+  await expect(ios.getByRole("button", { name: "Like Maya" })).toBeEnabled();
+
+  await page.reload();
+  await expect(ios.getByRole("button", { name: "Like Maya" })).toBeEnabled();
+});
+
 test("Arjun and Maya can mutually like, match, and exchange messages", async ({ page }) => {
   const ios = page.locator(".device-column.ios");
   const android = page.locator(".device-column.android");
