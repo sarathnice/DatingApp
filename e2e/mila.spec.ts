@@ -46,3 +46,81 @@ test("browses profile media and remembers a like during the session", async ({ p
   await page.getByRole("button", { name: "View Maya's full profile" }).click();
   await expect(page.locator(".full-profile").first().getByRole("button", { name: "Liked", exact: true })).toBeDisabled();
 });
+
+test("Arjun and Maya can mutually like, match, and exchange messages", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  const android = page.locator(".device-column.android");
+
+  await page.getByRole("group", { name: "Test profile scenario" }).getByRole("button", { name: "Arjun + Maya" }).click();
+  await ios.getByRole("button", { name: "Like Maya" }).click();
+  await android.getByRole("button", { name: "Like Arjun" }).click();
+  await expect(ios.getByText("It’s a match!")).toBeVisible();
+
+  await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Chats" }).click();
+  await expect(android.getByText("Connected · Messages are now open")).toBeVisible();
+
+  await ios.getByRole("textbox", { name: "Message Maya" }).fill("Hi Maya, would you like to visit the design museum this weekend?");
+  await ios.getByRole("button", { name: "Send message" }).click();
+  await expect(android.getByText("Hi Maya, would you like to visit the design museum this weekend?")).toBeVisible();
+
+  await android.getByRole("textbox", { name: "Message Arjun" }).fill("Yes, Saturday afternoon works well for me.");
+  await android.getByRole("button", { name: "Send message" }).click();
+  await expect(ios.getByText("Yes, Saturday afternoon works well for me.")).toBeVisible();
+  await expect(ios.getByText("Relationship Journey")).toBeVisible();
+});
+
+test("Arjun sends Priya a contextual introduction and Priya accepts", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  const android = page.locator(".device-column.android");
+
+  await page.getByRole("group", { name: "Test profile scenario" }).getByRole("button", { name: "Arjun + Priya" }).click();
+  await ios.getByRole("button", { name: "Send intro to Priya" }).click();
+  await expect(ios.getByText("Send an introduction before matching", { exact: true })).toBeVisible();
+  await ios.getByRole("button", { name: "Continue" }).click();
+
+  const intro = ios.getByRole("textbox", { name: "Introduction to Priya" });
+  await expect(intro).toBeVisible();
+  await intro.fill("Hi Priya, your Sunday market tradition sounds lovely. What is your favorite place for filter coffee?");
+  await expect(ios.getByText("Strong · personal and specific")).toBeVisible();
+  await expect(ios.getByText("Intent aligns")).toBeVisible();
+  await ios.getByRole("button", { name: "Send connection" }).click();
+
+  await android.getByRole("navigation", { name: "android preview pages" }).getByRole("button", { name: "Likes" }).click();
+  await expect(android.getByText("Arjun sent an introduction")).toBeVisible();
+  await android.getByRole("button", { name: "Accept & chat" }).click();
+  await expect(android.getByText("Connected · Messages are now open")).toBeVisible();
+  await android.getByRole("textbox", { name: "Message Arjun" }).fill("I would enjoy that. Let’s compare our favorite cafés.");
+  await android.getByRole("button", { name: "Send message" }).click();
+  await expect(ios.getByText("I would enjoy that. Let’s compare our favorite cafés.")).toBeVisible();
+});
+
+test("Hana can decline an introduction without opening chat", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  const android = page.locator(".device-column.android");
+
+  await page.getByRole("group", { name: "Test profile scenario" }).getByRole("button", { name: "Arjun + Hana" }).click();
+  await ios.getByRole("button", { name: "Send intro to Hana" }).click();
+  await ios.getByRole("button", { name: "Continue" }).click();
+  await ios.getByRole("textbox", { name: "Introduction to Hana" }).fill("Hi Hana, I also enjoy documentaries. Which recent story stayed with you?");
+  await ios.getByRole("button", { name: "Send connection" }).click();
+
+  await android.getByRole("navigation", { name: "android preview pages" }).getByRole("button", { name: "Likes" }).click();
+  await android.getByRole("button", { name: "Decline" }).click();
+  await expect(android.getByText("Introduction declined. No chat was opened.")).toBeVisible();
+  await android.getByRole("navigation", { name: "android preview pages" }).getByRole("button", { name: "Chats" }).click();
+  await expect(android.getByText("Both people must like each other first.")).toBeVisible();
+});
+
+test("Phase 3 relationship controls save capacity, life mode, and boundaries", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Profile" }).click();
+  await ios.getByRole("button", { name: /Mila relationship controls/i }).click();
+  await expect(ios.getByText("Your pace, your boundaries")).toBeVisible();
+  await ios.getByRole("slider", { name: "Connection capacity" }).fill("2");
+  await expect(ios.getByText("2 active")).toBeVisible();
+  await ios.getByRole("combobox", { name: "Life Change Mode" }).selectOption("Limited availability");
+  await ios.getByRole("switch", { name: "Allow temporary location sharing" }).click();
+  await expect(ios.getByRole("switch", { name: "Allow temporary location sharing" })).toBeChecked();
+  await ios.getByRole("button", { name: "Save" }).click();
+  await expect(ios.getByText("Your pace, your boundaries")).toBeHidden();
+});

@@ -80,7 +80,8 @@ const themes = [
 type Theme = (typeof themes)[number]["id"];
 type Tab = "discover" | "explore" | "likes" | "chats" | "you";
 type Platform = "ios" | "android";
-type AccountPanel = "preferences" | "membership" | "registration" | null;
+type AccountPanel = "preferences" | "membership" | "registration" | "mila-lab" | null;
+type WomanProfileId = "maya" | "priya" | "hana";
 type DemoProfile = {
   id: "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo";
   name: string;
@@ -224,6 +225,8 @@ const discoveryProfiles: Record<Platform, DemoProfile[]> = {
   android: [demoProfiles.arjun, demoProfiles.marcus, demoProfiles.leo],
 };
 
+const scenarioWomen = [demoProfiles.maya, demoProfiles.priya, demoProfiles.hana] as const;
+
 const interestOptions = [
   "Travel",
   "Live music",
@@ -281,8 +284,8 @@ const navigation = [
 
 const featureGroups = [
   {
-    label: "Core experience",
-    timing: "MVP",
+    label: "Phase 1 · Trusted foundation",
+    timing: "0–6 months",
     features: [
       ["Swipe discovery", "Like, pass, undo and priority introduction.", Heart],
       [
@@ -303,8 +306,8 @@ const featureGroups = [
     ],
   },
   {
-    label: "Mila intelligence",
-    timing: "MVP +",
+    label: "Phase 2 · AI assistance",
+    timing: "7–18 months",
     features: [
       [
         "Explain my match",
@@ -329,28 +332,28 @@ const featureGroups = [
     ],
   },
   {
-    label: "Trust & worldwide",
-    timing: "MVP",
+    label: "Phase 3 · Mila advantage",
+    timing: "Years 2–5",
     features: [
       [
-        "Verification & safety",
-        "Liveness checks, scam signals and reporting.",
+        "Relationship Journey",
+        "Mutual progress from introduction to a safe date.",
+        CalendarHeart,
+      ],
+      [
+        "Boundary Passport",
+        "Private consent and communication preferences.",
         ShieldCheck,
       ],
       [
-        "Language bridge",
-        "Translate while preserving personality and tone.",
-        Languages,
-      ],
-      [
-        "Global identity",
-        "City, roots, languages and relocation—each optional.",
-        Globe2,
-      ],
-      [
-        "Safe date planning",
-        "Public places, trusted contacts and check-ins.",
+        "Reciprocal fairness",
+        "Balanced exposure instead of popularity-only ranking.",
         UsersRound,
+      ],
+      [
+        "Life Change Mode",
+        "Adjust dating pace for travel, relocation or a break.",
+        Globe2,
       ],
     ],
   },
@@ -502,6 +505,11 @@ function MobileScreen({
   });
   const [safeDateOpen, setSafeDateOpen] = useState(false);
   const [datePlanSaved, setDatePlanSaved] = useState(false);
+  const [connectionCapacity, setConnectionCapacity] = useState(4);
+  const [lifeMode, setLifeMode] = useState("Ready to date");
+  const [voiceMessagesAllowed, setVoiceMessagesAllowed] = useState(true);
+  const [videoCallsAllowed, setVideoCallsAllowed] = useState(true);
+  const [locationSharingAllowed, setLocationSharingAllowed] = useState(false);
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(`mila-liked-${platform}`);
@@ -542,6 +550,11 @@ function MobileScreen({
   } | null>(null);
   const queue = discoveryProfiles[platform];
   const profile = queue[discoveryIndex] || initialProfile;
+  useEffect(() => {
+    const nextIndex = queue.findIndex((person) => person.id === initialProfile.id);
+    setDiscoveryIndex(nextIndex >= 0 ? nextIndex : 0);
+    onMediaIndex(0);
+  }, [initialProfile.id, platform]);
   const isFavorite = favoriteIds.includes(profile.id);
   const isLiked = likedProfileIds.includes(profile.id);
   const connectMoments = [
@@ -576,7 +589,13 @@ function MobileScreen({
     : initialProfile.name;
   const suggestedIntro = `Hi ${profile.name}—I noticed we both enjoy ${profile.tags[0].toLowerCase()}. I’d love to hear what got you into it.`;
   const zodiac = zodiacFor(birthDate);
-  const selfProfile = platform === "ios" ? demoProfiles.arjun : demoProfiles.maya;
+  const selfProfile = Object.values(demoProfiles).find((person) => person.name === viewerName)
+    ?? (platform === "ios" ? demoProfiles.arjun : demoProfiles.maya);
+  const introQuality = introMessage.trim().length >= 60
+    ? "Strong · personal and specific"
+    : introMessage.trim().length >= 25
+      ? "Good start · add one thoughtful question"
+      : "Add a detail from the profile";
   const selectedMembershipPlan = membershipPlans.find((item) => item.id === selectedPlan) ?? membershipPlans[3];
   const selectedBoostPackage = boostPackages.find((item) => item.id === selectedBoost) ?? boostPackages[1];
   const openEditor = (
@@ -873,7 +892,7 @@ function MobileScreen({
     <div className="device-caption">
       <span>{viewerName}’s view</span>
       <small>
-        {platform === "ios" ? "iPhone · viewing Maya" : "Android · viewing Arjun"}
+        {platform === "ios" ? "iPhone" : "Android"} · viewing {initialProfile.name}
       </small>
       </div>
       <div className={`phone-frame compare-phone ${platform}`}>
@@ -1147,7 +1166,14 @@ function MobileScreen({
                           placeholder={connectReview ? `Write about ${selectedConnectMoment.hint}…` : undefined}
                           maxLength={240}
                         />
-                        <small className="intro-count">{introMessage.length}/240</small>
+                        <div className="intro-feedback" aria-live="polite">
+                          <span><Sparkles /> {introQuality}</span>
+                          <small>{introMessage.length}/240</small>
+                        </div>
+                        <div className="intent-agreement">
+                          <Check />
+                          <span><b>Intent aligns</b><small>You both selected a long-term relationship. Confirm details together in chat.</small></span>
+                        </div>
                         <div className="intro-compose-actions">
                           <button onClick={() => { setIntroComposerOpen(false); setConnectReview(false); }}>Cancel</button>
                           <button disabled={!introMessage.trim()} onClick={sendIntroduction}>
@@ -1439,6 +1465,24 @@ function MobileScreen({
                   </button>
                 </div>
                 {chatOpen && (
+                  <div className="relationship-journey" aria-label="Relationship journey">
+                    <header><span><CalendarHeart /> Relationship Journey</span><small>Private shared progress</small></header>
+                    <div>
+                      <span className="complete"><i>1</i><b>Connected</b></span>
+                      <span className={messages.length > 1 ? "complete" : "current"}><i>2</i><b>Talking</b></span>
+                      <span className={datePlanSaved ? "complete" : "current"}><i>3</i><b>Planning</b></span>
+                      <span className={datePlanSaved ? "current" : ""}><i>4</i><b>Date</b></span>
+                    </div>
+                  </div>
+                )}
+                {chatOpen && (
+                  <details className="compatibility-conversations">
+                    <summary><Sparkles /> Conversation cards <ChevronDown /></summary>
+                    <p>Choose a topic when it feels natural. Answers stay in this conversation.</p>
+                    <div><button>Communication</button><button>Family plans</button><button>Relocation</button><button>Money values</button></div>
+                  </details>
+                )}
+                {chatOpen && (
                   <div className="safe-date-card">
                     <ShieldCheck />
                     <span><b>Plan a safer first date</b><small>Public place · Share plan · Check in</small></span>
@@ -1578,6 +1622,14 @@ function MobileScreen({
                   </span>
                   <ChevronRight />
                 </button>
+                <button className="setting-row setting-row-button mila-lab-link" onClick={() => setAccountPanel("mila-lab")}>
+                  <Sparkles />
+                  <span>
+                    <b>Mila relationship controls</b>
+                    <small>Capacity, boundaries and Life Change Mode</small>
+                  </span>
+                  <ChevronRight />
+                </button>
                 <div className="setting-row">
                   <ShieldCheck />
                   <span>
@@ -1702,6 +1754,12 @@ function MobileScreen({
                   <span><b>Why Mila recommends {profile.name}</b><small>{showReason ? `You both value long-term connection, ${profile.tags[0].toLowerCase()}, and an intentional pace.` : "See the profile details behind this recommendation"}</small></span>
                   <ChevronDown />
                 </button>
+                {showReason && (
+                  <div className="match-unknowns">
+                    <span><b>Important unknowns</b><small>Useful topics for a real conversation</small></span>
+                    <div><em>Preferred timeline</em><em>Family involvement</em><em>Relocation details</em></div>
+                  </div>
+                )}
                 <section className="modern-profile-section about-profile-section">
                   <header><span>About</span><small>In their own words</small></header>
                   <p>{profile.about}</p>
@@ -1990,6 +2048,36 @@ function MobileScreen({
                     </p>
                   )}
                 </div>}
+              </div>
+            </section>
+          )}
+          {accountPanel === "mila-lab" && (
+            <section className="account-panel mila-lab-panel">
+              <header className="account-panel-header">
+                <button onClick={() => setAccountPanel(null)} aria-label="Close Mila relationship controls"><ArrowLeft /></button>
+                <span><b>Relationship controls</b><small>Private settings that adapt Mila to your life</small></span>
+                <button className="panel-save" onClick={() => { setProfileNotice("Relationship controls saved"); setAccountPanel(null); }}>Save</button>
+              </header>
+              <div className="account-panel-scroll">
+                <div className="preference-summary lab-summary">
+                  <Sparkles />
+                  <span><b>Your pace, your boundaries</b><small>Mila uses these settings to reduce overload. They are never shown as a compatibility score.</small></span>
+                </div>
+                <section className="settings-card">
+                  <label className="range-setting">
+                    <span><b>Connection capacity</b><strong>{connectionCapacity} active</strong></span>
+                    <input aria-label="Connection capacity" type="range" min="1" max="8" value={connectionCapacity} onChange={(event) => setConnectionCapacity(Number(event.target.value))} />
+                    <small>When this limit is reached, Mila pauses new Intros and helps you focus on current conversations.</small>
+                  </label>
+                  <label className="select-setting"><span><b>Life Change Mode</b><small>Adjust recommendations without deleting your profile</small></span><NativeSelect aria-label="Life Change Mode" value={lifeMode} onChange={(event) => setLifeMode(event.target.value)}><NativeSelectOption>Ready to date</NativeSelectOption><NativeSelectOption>Recently relocated</NativeSelectOption><NativeSelectOption>Traveling</NativeSelectOption><NativeSelectOption>Limited availability</NativeSelectOption><NativeSelectOption>Taking a break</NativeSelectOption></NativeSelect></label>
+                </section>
+                <h3>Boundary Passport</h3>
+                <section className="settings-card boundary-card">
+                  <div className="toggle-setting"><span><b>Voice messages</b><small>Matches may send voice messages</small></span><Switch size="sm" checked={voiceMessagesAllowed} onCheckedChange={setVoiceMessagesAllowed} aria-label="Allow voice messages" /></div>
+                  <div className="toggle-setting"><span><b>Video calls</b><small>Ask before starting an in-app video call</small></span><Switch size="sm" checked={videoCallsAllowed} onCheckedChange={setVideoCallsAllowed} aria-label="Allow video calls" /></div>
+                  <div className="toggle-setting"><span><b>Live location</b><small>Off by default; sharing always expires</small></span><Switch size="sm" checked={locationSharingAllowed} onCheckedChange={setLocationSharingAllowed} aria-label="Allow temporary location sharing" /></div>
+                </section>
+                <p className="privacy-copy"><ShieldCheck /> These preferences are private. Mila shows a boundary only when another person attempts the related action.</p>
               </div>
             </section>
           )}
@@ -2296,6 +2384,7 @@ function MobileScreen({
 
 export default function Home() {
   const [theme, setTheme] = useState<Theme>("sunrise");
+  const [selectedWomanId, setSelectedWomanId] = useState<WomanProfileId>("maya");
   const [activeTab, setActiveTab] = useState<Tab>("discover");
   const [decisionIos, setDecisionIos] = useState<
     "idle" | "liked" | "passed" | "intro"
@@ -2317,6 +2406,7 @@ export default function Home() {
   const [radius, setRadius] = useState(5);
   const [introRequest, setIntroRequest] = useState<IntroRequest | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const selectedWoman = demoProfiles[selectedWomanId];
   useEffect(() => {
     document.documentElement.dataset.milaReady = "true";
     return () => {
@@ -2339,6 +2429,22 @@ export default function Home() {
       ...items,
       { id: `message-${Date.now()}-${items.length}`, sender, text: text.trim() },
     ]);
+  };
+  const selectScenario = (profileId: WomanProfileId) => {
+    setSelectedWomanId(profileId);
+    setDecisionIos("idle");
+    setDecisionAndroid("idle");
+    setIntroRequest(null);
+    setMessages([]);
+    setProfileOpenIos(false);
+    setProfileOpenAndroid(false);
+    setSafetyOpenIos(false);
+    setSafetyOpenAndroid(false);
+    setBlockedIos(false);
+    setBlockedAndroid(false);
+    setMediaIndexIos(0);
+    setMediaIndexAndroid(0);
+    setActiveTab("discover");
   };
   const sharedPreview = {
     activeTab,
@@ -2384,10 +2490,20 @@ export default function Home() {
           </h1>
           <p>
             Explore the mobile preview. Switch pages and themes, browse profiles,
-            and try an introduction between Arjun and Maya.
+            and test introductions between Arjun, Maya, Priya and Hana.
           </p>
         </div>
         <div className="preview-controls">
+          <div className="control-group scenario-control">
+            <span>Profile scenario</span>
+            <div className="scenario-tabs" role="group" aria-label="Test profile scenario">
+              {scenarioWomen.map((person) => (
+                <button key={person.id} onClick={() => selectScenario(person.id as WomanProfileId)} aria-pressed={selectedWomanId === person.id}>
+                  <i className={`profile-${person.id}`} /> Arjun + {person.name}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="control-group">
             <span>Preview page</span>
             <div className="page-tabs">
@@ -2428,9 +2544,10 @@ export default function Home() {
         </div>
         <div className="device-grid">
           <MobileScreen
+            key={`ios-${selectedWomanId}`}
             platform="ios"
             viewerName="Arjun"
-            profile={demoProfiles.maya}
+            profile={selectedWoman}
             decision={decisionIos}
             onDecision={setDecisionIos}
             matched={matched}
@@ -2448,8 +2565,9 @@ export default function Home() {
             {...sharedPreview}
           />
           <MobileScreen
+            key={`android-${selectedWomanId}`}
             platform="android"
-            viewerName="Maya"
+            viewerName={selectedWoman.name}
             profile={demoProfiles.arjun}
             decision={decisionAndroid}
             onDecision={setDecisionAndroid}
@@ -2470,14 +2588,14 @@ export default function Home() {
         </div>
         <div className="platform-notes">
           <div>
-            <strong>Step 1 · Arjun messages Maya</strong>
+            <strong>Step 1 · Arjun messages {selectedWoman.name}</strong>
             <span>
               Tap the star on iPhone, personalize the introduction, and send
-              it for Maya to review.
+              it for {selectedWoman.name} to review.
             </span>
           </div>
           <div>
-            <strong>Step 2 · Maya accepts and replies</strong>
+            <strong>Step 2 · {selectedWoman.name} accepts and replies</strong>
             <span>
               Open Requests on Android, accept Arjun’s introduction, and reply
               from the shared conversation.
