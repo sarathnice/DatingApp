@@ -884,3 +884,89 @@ button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
   .feature-link { width:44px; padding:0!important; font-size:0!important; }
   .feature-link svg { width:18px; }
 }
+
+/* Discover spaces: one photo-led invitation plus compact, meaning-coded tiles. */
+.explore-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:18px;
+}
+.explore-grid button,
+.explore-grid button.wide {
+  position:relative;
+  isolation:isolate;
+  min-height:148px;
+  padding:14px;
+  overflow:hidden;
+  border:0;
+  border-radius:22px;
+  color:#fff;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:space-between;
+  box-shadow:0 10px 24px rgba(20,20,24,.13);
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.explore-grid button.wide {
+  grid-column:1/-1;
+  min-height:188px;
+  padding:18px;
+  background:
+    linear-gradient(90deg,rgba(16,11,8,.84) 0%,rgba(16,11,8,.55) 50%,rgba(16,11,8,.16) 100%),
+    url('/discovery-profiles.png') center 15% / 125% auto;
+}
+.explore-grid button::after {
+  content:'';
+  position:absolute;
+  z-index:-1;
+  inset:auto -28px -42px auto;
+  width:112px;
+  height:112px;
+  border-radius:50%;
+  background:rgba(255,255,255,.13);
+}
+.explore-grid button.wide::after { width:170px; height:170px; right:-28px; bottom:-76px; }
+.explore-nearby { background:linear-gradient(145deg,#0878c9,#3ca5e8); }
+.explore-global { background:linear-gradient(145deg,#5a3ec8,#8a6de9); }
+.explore-tonight { background:linear-gradient(145deg,#e05d00,#ff9f0a); }
+.explore-culture { background:linear-gradient(145deg,#087a62,#18a983); }
+.explore-art {
+  width:46px;
+  height:46px;
+  flex:none;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:15px;
+  background:rgba(255,255,255,.18);
+  backdrop-filter:blur(12px) saturate(1.2);
+  display:grid;
+  place-items:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24);
+}
+.explore-grid .explore-art svg,
+.explore-grid button.wide .explore-art svg { width:24px; height:24px; color:#fff; }
+.explore-copy { position:relative; z-index:1; display:flex; flex-direction:column; gap:4px; padding-right:16px; }
+.explore-copy i {
+  align-self:flex-start;
+  margin-bottom:3px;
+  padding:4px 7px;
+  border-radius:999px;
+  background:#f56300;
+  color:#fff;
+  font-size:11px;
+  font-style:normal;
+  font-weight:750;
+  letter-spacing:.01em;
+}
+.explore-grid .explore-copy b { color:#fff; font-size:18px; font-weight:720; line-height:1.08; letter-spacing:-.03em; }
+.explore-grid .explore-copy small { color:rgba(255,255,255,.82); font-size:12px; font-weight:560; line-height:1.25; opacity:1; }
+.explore-arrow { position:absolute; right:11px; bottom:12px; width:17px!important; height:17px!important; color:rgba(255,255,255,.82)!important; }
+.explore-grid button.wide .explore-arrow { right:17px; bottom:18px; }
+.explore-grid button:focus-visible { outline:3px solid color-mix(in srgb,var(--accent) 62%,white); outline-offset:3px; }
+@media (hover:hover) {
+  .explore-grid button:hover { transform:translateY(-3px); box-shadow:0 15px 30px rgba(20,20,24,.2); }
+}
+.theme-paper .explore-grid button,
+.theme-paper .explore-grid button.wide { border-radius:22px; }

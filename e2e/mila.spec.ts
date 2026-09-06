@@ -9,6 +9,17 @@ test.afterEach(async ({ page }) => {
   expect(await page.pageErrors()).toEqual([]);
 });
 
+test("discover spaces are visually grouped and open a matching feed", async ({ page }) => {
+  await page.getByRole("button", { name: "Discover", exact: true }).first().click();
+
+  await expect(page.getByRole("button", { name: /Ready for real/ }).first()).toBeVisible();
+  await expect(page.getByText("Most popular").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Across borders/ }).first()).toBeVisible();
+
+  await page.getByRole("button", { name: /New in town/ }).first().click();
+  await expect(page.getByRole("status").first()).toContainText("New in town selected");
+});
+
 test("reports a healthy staging service", async ({ page }) => {
   const response = await page.request.get("/api/health");
   expect(response.ok()).toBeTruthy();

@@ -1203,40 +1203,46 @@ function MobileScreen({
                 <h2>Date with intention.</h2>
                 <p>Choose a space that matches what you want today.</p>
                 <div className="explore-grid">
-                  <button className="wide" onClick={() => openExploreFeed("Ready for real")}>
-                    <Heart />
-                    <span>
+                  <button className="wide explore-ready" onClick={() => openExploreFeed("Ready for real")}>
+                    <span className="explore-art" aria-hidden="true"><Heart /></span>
+                    <span className="explore-copy">
+                      <i>Most popular</i>
                       <b>Ready for real</b>
-                      <small>Long-term connections</small>
+                      <small>Long-term connections · 1.2K nearby</small>
                     </span>
+                    <ChevronRight className="explore-arrow" aria-hidden="true" />
                   </button>
-                  <button onClick={() => openExploreFeed("New in town")}>
-                    <MapPin />
-                    <span>
+                  <button className="explore-nearby" onClick={() => openExploreFeed("New in town")}>
+                    <span className="explore-art" aria-hidden="true"><MapPin /></span>
+                    <span className="explore-copy">
                       <b>New in town</b>
-                      <small>Meet nearby</small>
+                      <small>286 nearby</small>
                     </span>
+                    <ChevronRight className="explore-arrow" aria-hidden="true" />
                   </button>
-                  <button onClick={() => openExploreFeed("Across borders")}>
-                    <Globe2 />
-                    <span>
+                  <button className="explore-global" onClick={() => openExploreFeed("Across borders")}>
+                    <span className="explore-art" aria-hidden="true"><Globe2 /></span>
+                    <span className="explore-copy">
                       <b>Across borders</b>
-                      <small>Open to distance</small>
+                      <small>640 worldwide</small>
                     </span>
+                    <ChevronRight className="explore-arrow" aria-hidden="true" />
                   </button>
-                  <button onClick={() => openExploreFeed("Free tonight")}>
-                    <Zap />
-                    <span>
+                  <button className="explore-tonight" onClick={() => openExploreFeed("Free tonight")}>
+                    <span className="explore-art" aria-hidden="true"><Zap /></span>
+                    <span className="explore-copy">
                       <b>Free tonight</b>
-                      <small>Spontaneous plans</small>
+                      <small>74 available</small>
                     </span>
+                    <ChevronRight className="explore-arrow" aria-hidden="true" />
                   </button>
-                  <button onClick={() => openExploreFeed("Culture & roots")}>
-                    <UsersRound />
-                    <span>
+                  <button className="explore-culture" onClick={() => openExploreFeed("Culture & roots")}>
+                    <span className="explore-art" aria-hidden="true"><UsersRound /></span>
+                    <span className="explore-copy">
                       <b>Culture & roots</b>
-                      <small>Share your world</small>
+                      <small>512 connections</small>
                     </span>
+                    <ChevronRight className="explore-arrow" aria-hidden="true" />
                   </button>
                 </div>
               </div>
