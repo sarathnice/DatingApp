@@ -1,0 +1,72 @@
+/* Mila Signature — a working mobile app, with a separate testing studio. */
+.signature-mode { --paper:#f6f6f7; --accent:#b94709; --accent2:#f78e43; padding:0!important; min-height:100dvh; }
+.signature-mode>section:not(.compare-stage) { display:none!important; }
+.signature-mode .preview-header,.signature-mode .compare-heading,.signature-mode .preview-controls,.signature-mode .platform-notes,.signature-mode .feature-plan,.signature-mode .device-caption,.signature-mode .device-column.android,.signature-mode .home-indicator { display:none!important; }
+.signature-mode .compare-stage { padding:0!important; margin:0!important; max-width:none; }
+.signature-mode .device-grid { display:block; padding:0!important; margin:0 auto; background:none; max-width:480px; }
+.signature-mode .compare-phone { width:100%!important; max-width:none!important; height:100dvh!important; aspect-ratio:auto!important; padding:0!important; border:0!important; border-radius:0!important; box-shadow:none!important; background:var(--phone); }
+.signature-mode .phone-screen { height:100%!important; border-radius:0!important; grid-template-rows:72px minmax(0,1fr) auto!important; overflow:hidden; }
+.signature-mode .app-head { min-height:72px; padding-inline:18px; }
+.signature-mode .bottom-nav { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:8px 12px max(10px,env(safe-area-inset-bottom))!important; }
+.signature-mode .bottom-nav button { font-size:14px; min-height:56px; }
+.signature-mode .bottom-nav button i { display:none; }
+.signature-mode .screen-content { display:flex; flex-direction:column; min-height:0; }
+.signature-mode .discover-screen { flex:1; min-height:0; }
+.discovery-segments { display:flex; flex-shrink:0; gap:8px; padding:8px 18px 12px; background:var(--phone); }
+.discovery-segments button { flex:1; min-height:44px; border-radius:14px; font-size:14px; color:var(--ink); background:var(--soft); }
+.discovery-segments button[aria-pressed=true] { color:white; background:var(--ink); }
+.signature-mode .discover-screen .profile-card { border-radius:24px 24px 0 0!important; }
+.signature-mode .verified-pill,.signature-mode .video-pill { display:none; }
+.signature-mode .nearby-on-photo { top:22px; }
+.signature-mode .browse-guide { top:76px!important; }
+.signature-mode .browse-guide span { display:none; }
+.signature-mode .browse-guide { justify-content:flex-end; }
+.signature-mode .profile-details { bottom:110px!important; }
+.signature-mode .profile-details .profile-tags span:nth-child(n+2) { display:none!important; }
+.signature-mode .profile-details h2 { font-size:32px; }
+.signature-mode .profile-details p { font-size:16px; }
+.signature-mode .overlay-actions { gap:12px!important; bottom:18px; padding:0 18px; height:68px!important; }
+.signature-mode .overlay-actions button { display:flex!important; flex-direction:column; align-items:center!important; justify-content:center!important; padding:8px!important; gap:5px; width:68px!important; height:68px!important; min-width:68px!important; border-radius:22px!important; }
+.signature-mode .overlay-actions .action-pass { order:1; }
+.signature-mode .overlay-actions .like { order:2; color:#d42543!important; }
+.signature-mode .overlay-actions .priority { order:3; flex:1; max-width:150px; background:var(--accent)!important; color:white!important; }
+.signature-mode .overlay-actions button>span { display:block!important; position:static!important; transform:none!important; font-size:14px!important; line-height:1.2!important; font-weight:600!important; color:inherit!important; }
+.signature-mode .overlay-actions button>svg { position:static!important; width:22px!important; height:22px!important; margin:0!important; transform:none!important; }
+.signature-mode .overlay-actions .action-undo { position:absolute; right:18px; bottom:100px; width:44px!important; height:44px!important; min-width:44px!important; border-radius:50%!important; }
+.signature-mode .view-profile { right:54px; }
+.signature-mode .priority::before,.signature-mode .priority::after { display:none!important; }
+.signature-mode .explore-grid .explore-copy small { display:none; }
+.signature-mode .explore-grid button { min-height:190px; grid-template-rows:130px 60px; }
+.signature-mode .explore-art { min-height:130px; }
+.signature-mode .explore-grid .explore-copy { min-height:60px; padding:10px 12px; }
+.signature-mode .explore-grid .explore-copy b { font-size:16px; min-height:0; }
+.signature-mode .inner-screen { overflow-y:auto; min-height:0; padding-bottom:24px; }
+.signature-mode .inner-screen h2 { font-size:28px; }
+.signature-mode .screen-kicker { display:none; }
+.signature-mode .modern-profile-section { background:transparent; box-shadow:none; border:0; border-radius:0; padding:22px 0; margin:0; border-bottom:1px solid var(--soft); }
+.signature-mode .full-profile-copy { display:flex; flex-direction:column; padding:20px; }
+.signature-mode .about-profile-section { order:1; }
+.signature-mode .prompt-profile-section { order:1; }
+.signature-mode .match-unknowns { order:6; }
+.signature-mode .profile-fact-grid { order:2; }
+.signature-mode .lifestyle-profile-section { order:3; }
+.signature-mode .relationship-section { order:4; }
+.signature-mode .signature-photo-story { order:5; }
+.signature-mode .ai-match-summary { order:6; }
+.signature-mode .profile-fact-grid { background:transparent; gap:16px; padding:20px 0; }
+.signature-mode .profile-fact-grid>span { border:0; background:transparent; }
+.signature-mode .profile-fact-grid b { font-size:16px; }
+.signature-mode .profile-fact-grid small { font-size:14px; }
+.signature-photo-story h3 { font-size:20px; margin:20px 0 12px; }
+.signature-photo-story>div { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:16px; }
+.signature-photo-story [role=img] { flex:0 0 82%; height:280px; background-size:200% 200%; border-radius:18px; scroll-snap-align:start; }
+.voice-entry-choices { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-bottom:18px; }
+.voice-entry-choices button { display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 8px; border-radius:16px; background:var(--soft); color:var(--ink); font-size:14px; min-height:72px; }
+.testing-link { display:inline-flex; min-height:44px; align-items:center; font-size:14px; color:var(--accent); text-decoration:underline; }
+@media(max-height:740px) {
+  .signature-mode .phone-screen { grid-template-rows:64px minmax(0,1fr) auto!important; }
+  .signature-mode .app-head { min-height:64px; }
+  .signature-mode .browse-guide { top:70px!important; }
+  .signature-mode .profile-details p { margin-top:4px; }
+}
+@media(prefers-reduced-motion:reduce) { .signature-mode * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }

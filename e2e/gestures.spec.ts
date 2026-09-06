@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 for (const platform of ["ios", "android"]) {
   for (const direction of ["left", "right", "up", "down"]) {
     test(`${platform} mouse drag ${direction} browses a different person`, async ({ page }) => {
-      await page.goto("/");
+      await page.goto("/testing");
       await page.locator("html[data-mila-ready='true']").waitFor();
       const phone = page.locator(`.device-column.${platform}`);
       const card = phone.locator(".profile-card");
@@ -24,7 +24,7 @@ for (const platform of ["ios", "android"]) {
 }
 
 test("native touch swipe moves to next profile", async ({ page, context }) => {
-  await page.goto("/");
+  await page.goto("/testing");
   await page.locator("html[data-mila-ready='true']").waitFor();
   const card = page.locator(".device-column.ios .profile-card");
   await card.scrollIntoViewIfNeeded();
@@ -39,7 +39,7 @@ test("native touch swipe moves to next profile", async ({ page, context }) => {
 });
 
 test("single profile explains distance limit when Next is pressed", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/testing");
   await page.locator("html[data-mila-ready='true']").waitFor();
   const phone = page.locator(".device-column.ios");
   await phone.getByRole("button", { name: "Discovery filters" }).click();

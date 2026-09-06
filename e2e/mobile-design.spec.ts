@@ -4,7 +4,7 @@ for (const width of [360, 390, 430]) {
   for (const tab of ["Match", "Discover", "Likes", "Chats", "Profile"]) {
     test(`${width}px ${tab}: mobile layout and navigation`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto("/");
+      await page.goto("/testing");
       await page.locator("html[data-mila-ready='true']").waitFor();
       const phone = page.locator(".device-column.ios");
       const navButton = phone.getByRole("navigation").getByRole("button", { name: new RegExp(`^${tab}(?: \\d+)?$`) });
