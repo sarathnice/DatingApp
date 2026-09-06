@@ -1,5 +1,20 @@
 import { test, expect } from "@playwright/test";
 
+test("home Connect icon is prominent and readable", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("html[data-mila-ready=true]").waitFor();
+  const connect = page.locator(".device-column.ios").getByRole("button", { name: "Connect with Maya", exact: true });
+  const styles = await connect.evaluate((element) => {
+    const button = getComputedStyle(element);
+    const icon = getComputedStyle(element.querySelector("svg")!);
+    return { background: button.backgroundColor, color: button.color, iconWidth: Number.parseFloat(icon.width), iconColor: icon.color };
+  });
+  expect(styles.background).not.toBe("rgba(0, 0, 0, 0)");
+  expect(styles.color).toBe("rgb(255, 255, 255)");
+  expect(styles.iconColor).toBe("rgb(255, 255, 255)");
+  expect(styles.iconWidth).toBeGreaterThanOrEqual(23);
+});
+
 for (const entry of ["Connect with Maya", "Connect with Maya about their story", "Connect with Maya from profile actions"]) {
   test(`${entry} opens the same connection flow`, async ({ page }, info) => {
     await page.goto("/");
