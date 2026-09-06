@@ -11,10 +11,13 @@ import {
   CakeSlice,
   CalendarHeart,
   Check,
+  ChevronRight,
   ChevronDown,
   ChevronUp,
   Clock3,
   Compass,
+  CreditCard,
+  Crown,
   EyeOff,
   Eye,
   Flag,
@@ -39,7 +42,9 @@ import {
   Share2,
   ShieldCheck,
   Sparkles,
+  SlidersHorizontal,
   Star,
+  UserPlus,
   UserRound,
   UsersRound,
   Volume2,
@@ -70,6 +75,7 @@ const themes = [
 type Theme = (typeof themes)[number]["id"];
 type Tab = "discover" | "explore" | "likes" | "chats" | "you";
 type Platform = "ios" | "android";
+type AccountPanel = "preferences" | "membership" | "registration" | null;
 type DemoProfile = {
   id: "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo";
   name: string;
@@ -103,6 +109,59 @@ type VoiceRecognition = {
   onerror: () => void;
   onend: () => void;
 };
+
+const membershipPlans = [
+  { id: "weekly", label: "Weekly", total: "$9.99", cadence: "per week", note: "Try it short-term" },
+  { id: "monthly", label: "Monthly", total: "$24.99", cadence: "per month", note: "Flexible" },
+  { id: "six-month", label: "6 months", total: "$89.94", cadence: "$14.99 / month", note: "Save 40%" },
+  { id: "yearly", label: "Yearly", total: "$119.88", cadence: "$9.99 / month", note: "Best value · Save 60%" },
+] as const;
+
+const boostPackages = [
+  { id: "one", count: 1, price: "$7.99", unit: "$7.99 each" },
+  { id: "five", count: 5, price: "$29.99", unit: "$6.00 each" },
+  { id: "ten", count: 10, price: "$49.99", unit: "$5.00 each" },
+] as const;
+
+const preferenceFields = [
+  { key: "relationship", label: "Relationship goal", options: ["Long-term", "Marriage-minded", "Open to exploring"] },
+  { key: "languages", label: "Languages", options: ["Any", "English", "English + Hindi", "English + Spanish"] },
+  { key: "family", label: "Family plans", options: ["Open", "Wants children", "Doesn’t want children", "Unsure"] },
+  { key: "communication", label: "Communication style", options: ["Any", "Balanced", "Frequent", "In person first"] },
+  { key: "pets", label: "Pets", options: ["Any", "Likes pets", "Has pets", "No pets"] },
+  { key: "education", label: "Education", options: ["Any", "College", "Graduate degree", "Trade school"] },
+  { key: "smoking", label: "Smoking", options: ["Any", "Never", "Occasionally"] },
+  { key: "drinking", label: "Drinking", options: ["Any", "Never", "Socially"] },
+  { key: "workout", label: "Activity", options: ["Any", "Sometimes", "Often"] },
+] as const;
+
+const registrationSteps = [
+  {
+    title: "Create your account",
+    note: "Only the essentials to start.",
+    items: [["Phone or email", "Required"], ["Birthday", "Required · always private"], ["Name and pronouns", "Name required · pronouns optional"]],
+  },
+  {
+    title: "Build trust early",
+    note: "Safety choices before discovery.",
+    items: [["Photo + liveness check", "Required"], ["Community commitment", "Required"], ["Block contacts", "Optional and private"]],
+  },
+  {
+    title: "Show who you are",
+    note: "A strong profile without a long form.",
+    items: [["3 clear photos", "Required"], ["Short introduction", "Required"], ["Voice or video prompt", "Optional"], ["Work and education", "Optional"]],
+  },
+  {
+    title: "Choose who you meet",
+    note: "Set intent first; fine-tune later.",
+    items: [["Relationship goal", "Required"], ["Who you want to meet", "Required"], ["Age and distance", "Required"], ["Dealbreakers", "Optional"]],
+  },
+  {
+    title: "Review and go live",
+    note: "You control visibility and notifications.",
+    items: [["Profile preview", "Review"], ["Location precision", "Choose city or approximate"], ["Notification schedule", "Optional"], ["Terms and privacy", "Required"]],
+  },
+] as const;
 
 const demoProfiles: Record<DemoProfile["id"], DemoProfile> = {
   maya: {
@@ -407,6 +466,30 @@ function MobileScreen({
   const [likesLoaded, setLikesLoaded] = useState(false);
   const [calmMode, setCalmMode] = useState(false);
   const [preferenceStrength, setPreferenceStrength] = useState<"Must-have" | "Prefer" | "Open-minded">("Prefer");
+  const [accountPanel, setAccountPanel] = useState<AccountPanel>(null);
+  const [membershipView, setMembershipView] = useState<"plans" | "boosts">("plans");
+  const [selectedPlan, setSelectedPlan] = useState("yearly");
+  const [selectedBoost, setSelectedBoost] = useState("five");
+  const [purchaseNotice, setPurchaseNotice] = useState("");
+  const [registrationStep, setRegistrationStep] = useState(0);
+  const [interestedIn, setInterestedIn] = useState("Women");
+  const [ageMin, setAgeMin] = useState(26);
+  const [ageMax, setAgeMax] = useState(38);
+  const [includeFarther, setIncludeFarther] = useState(true);
+  const [includeOutsideAge, setIncludeOutsideAge] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [hasBioOnly, setHasBioOnly] = useState(true);
+  const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({
+    relationship: "Long-term",
+    languages: "Any",
+    family: "Open",
+    communication: "Balanced",
+    pets: "Any",
+    education: "Any",
+    smoking: "Never",
+    drinking: "Socially",
+    workout: "Any",
+  });
   const [safeDateOpen, setSafeDateOpen] = useState(false);
   const [datePlanSaved, setDatePlanSaved] = useState(false);
   useEffect(() => {
@@ -484,6 +567,8 @@ function MobileScreen({
   const suggestedIntro = `Hi ${profile.name}—I noticed we both enjoy ${profile.tags[0].toLowerCase()}. I’d love to hear what got you into it.`;
   const zodiac = zodiacFor(birthDate);
   const selfProfile = platform === "ios" ? demoProfiles.arjun : demoProfiles.maya;
+  const selectedMembershipPlan = membershipPlans.find((item) => item.id === selectedPlan) ?? membershipPlans[3];
+  const selectedBoostPackage = boostPackages.find((item) => item.id === selectedBoost) ?? boostPackages[1];
   const openEditor = (
     section: "basics" | "story" | "work" | "lifestyle" = "basics",
   ) => {
@@ -1453,6 +1538,31 @@ function MobileScreen({
                   </span>
                   <ChevronDown />
                 </div>
+                <h3 className="profile-settings-title">Account &amp; discovery</h3>
+                <button className="setting-row setting-row-button" onClick={() => setAccountPanel("preferences")}>
+                  <SlidersHorizontal />
+                  <span>
+                    <b>Discovery preferences</b>
+                    <small>{radius} mi · Ages {ageMin}–{ageMax} · {interestedIn}</small>
+                  </span>
+                  <ChevronRight />
+                </button>
+                <button className="setting-row setting-row-button" onClick={() => { setMembershipView("plans"); setPurchaseNotice(""); setAccountPanel("membership"); }}>
+                  <Crown />
+                  <span>
+                    <b>Membership &amp; Boosts</b>
+                    <small>Compare plans and visibility boosts</small>
+                  </span>
+                  <ChevronRight />
+                </button>
+                <button className="setting-row setting-row-button" onClick={() => { setRegistrationStep(0); setAccountPanel("registration"); }}>
+                  <UserPlus />
+                  <span>
+                    <b>Registration preview</b>
+                    <small>5 short steps · required fields are clear</small>
+                  </span>
+                  <ChevronRight />
+                </button>
                 <div className="setting-row">
                   <ShieldCheck />
                   <span>
@@ -1851,7 +1961,137 @@ function MobileScreen({
               </div>
             </section>
           )}
-          {!voiceOpen && !editorOpen && !profileOpen && !selfPreviewOpen && (
+          {accountPanel === "preferences" && (
+            <section className="account-panel preferences-panel">
+              <header className="account-panel-header">
+                <button onClick={() => setAccountPanel(null)} aria-label="Close discovery preferences"><ArrowLeft /></button>
+                <span><b>Discovery preferences</b><small>Shape your recommendations</small></span>
+                <button className="panel-save" onClick={() => { setProfileNotice("Discovery preferences saved"); setAccountPanel(null); }}>Save</button>
+              </header>
+              <div className="account-panel-scroll">
+                <div className="preference-summary">
+                  <SlidersHorizontal />
+                  <span><b>Find people who fit your life</b><small>Strict filters narrow results. “Prefer” choices improve ranking without hiding good people.</small></span>
+                </div>
+                <section className="settings-card">
+                  <button className="preference-link"><MapPin /><span><b>Location</b><small>Brooklyn, NY · approximate location</small></span><ChevronRight /></button>
+                  <label className="range-setting">
+                    <span><b>Maximum distance</b><strong>{radius} mi</strong></span>
+                    <input aria-label="Maximum distance" type="range" min="1" max="100" value={radius} onChange={(event) => onRadius(Number(event.target.value))} />
+                  </label>
+                  <div className="toggle-setting"><span><b>Expand distance when needed</b><small>Show a few people farther away after local profiles.</small></span><Switch size="sm" checked={includeFarther} onCheckedChange={setIncludeFarther} /></div>
+                  <label className="select-setting"><span><b>Interested in</b><small>Inclusive identity choices</small></span><NativeSelect value={interestedIn} onChange={(event) => setInterestedIn(event.target.value)}><NativeSelectOption>Women</NativeSelectOption><NativeSelectOption>Men</NativeSelectOption><NativeSelectOption>Everyone</NativeSelectOption><NativeSelectOption>Non-binary people</NativeSelectOption></NativeSelect></label>
+                  <div className="dual-range-setting">
+                    <span><b>Age range</b><strong>{ageMin}–{ageMax}</strong></span>
+                    <label>Minimum age<input aria-label="Minimum age" type="range" min="18" max="70" value={ageMin} onChange={(event) => setAgeMin(Math.min(Number(event.target.value), ageMax - 1))} /></label>
+                    <label>Maximum age<input aria-label="Maximum age" type="range" min="19" max="80" value={ageMax} onChange={(event) => setAgeMax(Math.max(Number(event.target.value), ageMin + 1))} /></label>
+                  </div>
+                  <div className="toggle-setting"><span><b>Expand age range when needed</b><small>Clearly label profiles outside your preference.</small></span><Switch size="sm" checked={includeOutsideAge} onCheckedChange={setIncludeOutsideAge} /></div>
+                </section>
+                <div className="preference-mode">
+                  <span><b>How should Mila use these?</b><small>Applies to compatibility choices below.</small></span>
+                  <div>{(["Must-have", "Prefer", "Open-minded"] as const).map((option) => <button key={option} aria-pressed={preferenceStrength === option} onClick={() => setPreferenceStrength(option)}>{option}</button>)}</div>
+                </div>
+                <h3>Compatibility</h3>
+                <section className="settings-card filter-list">
+                  {preferenceFields.map((field) => (
+                    <label className="select-setting" key={field.key}>
+                      <span><b>{field.label}</b><small>{preferenceStrength}</small></span>
+                      <NativeSelect value={advancedFilters[field.key]} onChange={(event) => setAdvancedFilters((current) => ({ ...current, [field.key]: event.target.value }))}>
+                        {field.options.map((option) => <NativeSelectOption key={option}>{option}</NativeSelectOption>)}
+                      </NativeSelect>
+                    </label>
+                  ))}
+                </section>
+                <h3>Profile quality</h3>
+                <section className="settings-card">
+                  <div className="toggle-setting"><span><b>Has an introduction</b><small>Prioritize profiles that share their story.</small></span><Switch size="sm" checked={hasBioOnly} onCheckedChange={setHasBioOnly} /></div>
+                  <div className="toggle-setting"><span><b>Verified profiles only</b><small>Verification is available to everyone.</small></span><Switch size="sm" checked={verifiedOnly} onCheckedChange={setVerifiedOnly} /></div>
+                </section>
+                <p className="privacy-copy"><ShieldCheck /> Exact location, birthday and private dealbreakers are never shown on your public profile.</p>
+              </div>
+            </section>
+          )}
+          {accountPanel === "membership" && (
+            <section className="account-panel membership-panel">
+              <header className="account-panel-header">
+                <button onClick={() => setAccountPanel(null)} aria-label="Close membership"><ArrowLeft /></button>
+                <span><b>Membership</b><small>Simple pricing, no hidden tiers</small></span>
+                <i className="mila-plus-mark">m+</i>
+              </header>
+              <div className="account-panel-scroll">
+                <div className="billing-tabs" role="tablist" aria-label="Purchase type">
+                  <button role="tab" aria-selected={membershipView === "plans"} onClick={() => { setMembershipView("plans"); setPurchaseNotice(""); }}>Mila Plus</button>
+                  <button role="tab" aria-selected={membershipView === "boosts"} onClick={() => { setMembershipView("boosts"); setPurchaseNotice(""); }}>Boosts</button>
+                </div>
+                {membershipView === "plans" ? <>
+                  <div className="membership-hero"><Crown /><span><b>More control, fewer interruptions</b><small>The same core dating and safety experience remains free.</small></span></div>
+                  <div className="plan-list">
+                    {membershipPlans.map((plan) => <button key={plan.id} aria-pressed={selectedPlan === plan.id} onClick={() => { setSelectedPlan(plan.id); setPurchaseNotice(""); }}>
+                      <i>{selectedPlan === plan.id && <Check />}</i>
+                      <span><b>{plan.label}</b><small>{plan.note}</small></span>
+                      <strong>{plan.total}<small>{plan.cadence}</small></strong>
+                    </button>)}
+                  </div>
+                  <section className="benefit-card">
+                    <h3>Included with every plan</h3>
+                    {["See who likes you", "Unlimited rewinds", "Advanced preferences", "Global discovery", "2 priority introductions each week", "1 profile Boost each month", "Incognito profile controls", "No ads"].map((item) => <p key={item}><Check /> {item}</p>)}
+                  </section>
+                  <p className="safety-free"><ShieldCheck /><span><b>Safety is never a paid feature</b><small>Block, report, verification, privacy controls and date check-ins remain free.</small></span></p>
+                </> : <>
+                  <div className="membership-hero boost-hero"><Zap /><span><b>Be seen at the right time</b><small>One Boost raises your profile’s visibility nearby for 30 minutes.</small></span></div>
+                  <div className="boost-list">
+                    {boostPackages.map((pack) => <button key={pack.id} aria-pressed={selectedBoost === pack.id} onClick={() => { setSelectedBoost(pack.id); setPurchaseNotice(""); }}>
+                      {pack.id === "five" && <em>Popular</em>}
+                      <i><Zap /></i><b>{pack.count} {pack.count === 1 ? "Boost" : "Boosts"}</b><strong>{pack.price}</strong><small>{pack.unit}</small>
+                    </button>)}
+                  </div>
+                  <section className="benefit-card boost-guidance"><h3>A healthier Boost</h3><p><Check /> See an estimated audience before starting</p><p><Check /> Choose now or schedule for an active time</p><p><Check /> Clear 30-minute countdown and results summary</p><p><Check /> Never reveals who paid to be seen</p></section>
+                </>}
+                {purchaseNotice && <div className="purchase-notice" role="status"><Check /> {purchaseNotice}</div>}
+                <p className="billing-legal">Preview pricing only. In the native app, the exact total, renewal date, taxes, cancellation method, and store terms appear before confirmation. Subscriptions auto-renew until cancelled; Boosts are one-time consumable purchases.</p>
+              </div>
+              <footer className="purchase-footer">
+                <span><small>{membershipView === "plans" ? selectedMembershipPlan.label : `${selectedBoostPackage.count} Boosts`}</small><b>{membershipView === "plans" ? selectedMembershipPlan.total : selectedBoostPackage.price}</b></span>
+                <button onClick={() => setPurchaseNotice("Demo confirmed — no payment was charged.")}><CreditCard /> Continue</button>
+              </footer>
+            </section>
+          )}
+          {accountPanel === "registration" && (
+            <section className="account-panel registration-panel">
+              <header className="account-panel-header">
+                <button onClick={() => setAccountPanel(null)} aria-label="Close registration preview"><X /></button>
+                <span><b>Registration preview</b><small>About 4 minutes</small></span>
+                <i>{registrationStep + 1}/5</i>
+              </header>
+              <div className="registration-progress" aria-label={`Step ${registrationStep + 1} of 5`}><i style={{ width: `${((registrationStep + 1) / 5) * 100}%` }} /></div>
+              <div className="account-panel-scroll registration-scroll">
+                <span className="step-kicker">Step {registrationStep + 1}</span>
+                <h2>{registrationSteps[registrationStep].title}</h2>
+                <p>{registrationSteps[registrationStep].note}</p>
+                <section className="registration-card">
+                  {registrationSteps[registrationStep].items.map(([label, status]) => <div key={label}><span><Check /><b>{label}</b></span><small>{status}</small></div>)}
+                </section>
+                {registrationStep === 0 && <div className="registration-tip"><ShieldCheck /><span><b>Age 18+ only</b><small>Birthday is used for age eligibility and is never displayed.</small></span></div>}
+                {registrationStep === 1 && <div className="registration-tip"><EyeOff /><span><b>Privacy-first defaults</b><small>Use approximate location, hide your profile anytime, and choose who can find you.</small></span></div>}
+                {registrationStep === 2 && <div className="registration-tip"><Sparkles /><span><b>AI is optional</b><small>Mila can help polish a bio, but users review every suggestion before publishing.</small></span></div>}
+                {registrationStep === 3 && <div className="registration-tip"><SlidersHorizontal /><span><b>Don’t ask everything now</b><small>Lifestyle, zodiac and compatibility details can be completed gradually after signup.</small></span></div>}
+                {registrationStep === 4 && <div className="registration-tip"><Languages /><span><b>Accessible worldwide</b><small>Choose language, text size, captions and reduced motion before entering Match.</small></span></div>}
+                <div className="registration-missing">
+                  <b>Built into Mila from day one</b>
+                  <span>Account recovery · notification controls · blocked contacts · location privacy · accessibility · consent reminders · data download/delete</span>
+                </div>
+              </div>
+              <footer className="registration-footer">
+                <button disabled={registrationStep === 0} onClick={() => setRegistrationStep((step) => Math.max(0, step - 1))}>Back</button>
+                <button onClick={() => {
+                  if (registrationStep < registrationSteps.length - 1) setRegistrationStep((step) => step + 1);
+                  else { setProfileNotice("Registration preview completed"); setAccountPanel(null); }
+                }}>{registrationStep === registrationSteps.length - 1 ? "Finish preview" : "Continue"}<ChevronRight /></button>
+              </footer>
+            </section>
+          )}
+          {!voiceOpen && !editorOpen && !profileOpen && !selfPreviewOpen && !accountPanel && (
             <button
               className="voice-fab"
               onClick={beginVoice}
