@@ -884,8 +884,8 @@ function MobileScreen({
                 {discoverNotice && <div className="discover-notice" role="status"><Check /> {discoverNotice}</div>}
                 <div className="today-bar" aria-label="Today at a glance">
                   <span><Sparkles /><b>Today</b><small>{calmMode ? "1 calm pick" : `${queue.length} picks`}</small></span>
-                  <button onClick={() => onTab("likes")}><Heart /> Likes</button>
-                  <button onClick={() => onTab("chats")}><MessageCircle /> Messages</button>
+                  <button className="today-likes" onClick={() => onTab("likes")}><Heart /> Likes</button>
+                  <button className="today-messages" onClick={() => onTab("chats")}><MessageCircle /> Messages</button>
                 </div>
                 {blocked ? (
                   <div className="blocked-state">
@@ -1004,10 +1004,10 @@ function MobileScreen({
                           </button>
                         </div>
                         <div className="swipe-actions overlay-actions">
-                          <button aria-label="Pass" onClick={() => advanceProfile("passed")}>
+                          <button className="action-pass" aria-label="Pass" onClick={() => advanceProfile("passed")}>
                             <X />
                           </button>
-                          <button aria-label="Undo" onClick={undoProfile}>
+                          <button className="action-undo" aria-label="Undo" onClick={undoProfile}>
                             <RotateCcw />
                           </button>
                           <button

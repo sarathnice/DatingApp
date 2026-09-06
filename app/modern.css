@@ -683,6 +683,42 @@ button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
 .registration-missing span { margin-top:5px; font-size:10px; line-height:1.5; color:color-mix(in srgb,var(--ink) 54%,transparent); }
 .registration-footer>button:first-child { min-height:44px; padding:0 12px; border:0; background:transparent; color:var(--ink); font-size:13px; }
 .registration-footer>button:first-child:disabled { opacity:.32; }
+
+/* Discover action colors keep the same meaning in every visual theme. */
+.preview-shell {
+  --icon-like:#ff2d55;
+  --icon-pass:#ff453a;
+  --icon-undo:#a66b18;
+  --icon-intro:#ff9f0a;
+  --icon-next:#16866a;
+  --icon-message:#9b51c7;
+  --icon-location:#20a06b;
+  --icon-work:#f07a22;
+}
+.today-bar>span svg { color:var(--icon-intro); }
+.today-bar .today-likes { color:var(--icon-like); background:color-mix(in srgb,var(--icon-like) 8%,var(--surface)); }
+.today-bar .today-messages { color:var(--icon-message); background:color-mix(in srgb,var(--icon-message) 8%,var(--surface)); }
+.today-bar .today-likes svg { fill:color-mix(in srgb,var(--icon-like) 22%,transparent); }
+.nearby-on-photo>span svg { color:#5de2a8; }
+.nearby-on-photo>button svg { color:#ffb13b; }
+.discover-screen .verified-pill svg { color:var(--icon-next)!important; fill:color-mix(in srgb,var(--icon-next) 18%,transparent); }
+.discover-screen .profile-details>p:nth-of-type(1) svg { color:#ffb13b; }
+.discover-screen .profile-details>p:nth-of-type(2) svg { color:#5de2a8; }
+.overlay-actions .action-pass { color:var(--icon-pass)!important; background:#fff7f6!important; box-shadow:0 7px 20px color-mix(in srgb,var(--icon-pass) 22%,transparent)!important; }
+.overlay-actions .action-undo { color:var(--icon-undo)!important; background:#fffaf0!important; box-shadow:0 7px 20px color-mix(in srgb,var(--icon-undo) 20%,transparent)!important; }
+.overlay-actions .priority { color:var(--icon-intro)!important; background:#fff9ed!important; box-shadow:0 7px 20px color-mix(in srgb,var(--icon-intro) 24%,transparent)!important; }
+.overlay-actions .priority span { color:var(--icon-intro)!important; }
+.overlay-actions .like { color:var(--icon-like)!important; background:#fff5f7!important; box-shadow:0 7px 20px color-mix(in srgb,var(--icon-like) 25%,transparent)!important; }
+.view-profile { color:var(--icon-next); background:#f3fff9; box-shadow:0 6px 20px color-mix(in srgb,var(--icon-next) 25%,transparent); }
+.card-passed .decision-stamp { border-color:var(--icon-pass); color:var(--icon-pass); }
+.card-intro .decision-stamp { border-color:var(--icon-intro); color:var(--icon-intro); }
+.card-liked .decision-stamp { border-color:var(--icon-like); color:var(--icon-like); }
+.theme-midnight .overlay-actions .action-pass { background:#2b1818!important; }
+.theme-midnight .overlay-actions .action-undo { background:#2b2418!important; }
+.theme-midnight .overlay-actions .priority { background:#2d2315!important; }
+.theme-midnight .overlay-actions .like { background:#2d1720!important; }
+.theme-midnight .view-profile { background:#142b24; }
+.theme-midnight .today-bar .today-likes,.theme-midnight .today-bar .today-messages { background:var(--surface); }
 .full-connect {
   background:rgba(245,245,247,.9);
   border-radius:999px;
