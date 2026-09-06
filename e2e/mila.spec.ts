@@ -192,8 +192,25 @@ test("mobile overlay labels stay compact without losing their controls", async (
   })));
   expect(sizes[0].box!.height).toBeLessThanOrEqual(31);
   expect(sizes[1].box!.height).toBeLessThanOrEqual(37);
-  expect(sizes[2].box!.height).toBeLessThanOrEqual(37);
+  expect(sizes[2].box!.height).toBeLessThanOrEqual(31);
+  expect(sizes[2].font).toBeLessThanOrEqual(9);
   expect(Math.max(...sizes.map((size) => size.font))).toBeLessThanOrEqual(11);
+});
+
+test("mobile header keeps search beside filters without colliding with voice", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  const search = ios.getByRole("button", { name: "Search profiles" });
+  const filters = ios.getByRole("button", { name: "Discovery filters" });
+  const voice = ios.getByRole("button", { name: "Open Mila Voice" });
+  const [searchBox, filterBox, voiceBox] = await Promise.all([
+    search.boundingBox(), filters.boundingBox(), voice.boundingBox(),
+  ]);
+
+  expect(searchBox).not.toBeNull();
+  expect(filterBox).not.toBeNull();
+  expect(voiceBox).not.toBeNull();
+  expect(filterBox!.x - (searchBox!.x + searchBox!.width)).toBeLessThanOrEqual(1);
+  expect(searchBox!.x - (voiceBox!.x + voiceBox!.width)).toBeGreaterThanOrEqual(4);
 });
 
 test("opens the Mila preview and profile settings", async ({ page }) => {
