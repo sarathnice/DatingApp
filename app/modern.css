@@ -897,7 +897,8 @@ button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
   .compare-stage { width:100%; padding:20px 0 40px; overflow:hidden; }
   .compare-heading,.preview-controls { margin-left:16px; margin-right:16px; }
   .compare-heading h1 { font-size:27px; }
-  .device-grid { display:flex; overflow-x:auto; width:100%; padding:12px 16px 18px; gap:14px; border:0; border-radius:0; background:transparent; box-shadow:none; scroll-padding-inline:16px; scroll-snap-type:x mandatory; }
+  .device-grid { display:flex; overflow-x:auto; width:100%; padding:12px 16px 18px; gap:14px; border:0; border-radius:0; background:transparent; box-shadow:none; scrollbar-width:none; scroll-padding-inline:16px; scroll-snap-type:x mandatory; }
+  .device-grid::-webkit-scrollbar { display:none; }
   .device-column { flex:0 0 min(420px,calc(100vw - 32px)); scroll-snap-align:center; }
   .compare-phone { width:100%; max-width:none; height:auto; aspect-ratio:9/19.5; padding:8px; border-radius:48px; }
   .compare-phone .phone-screen { border-radius:40px; }
