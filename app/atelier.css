@@ -59,6 +59,14 @@
 @media(prefers-reduced-motion:reduce) { .preview-shell button { transition:none; } }
 
 /* Mobile editorial system: generous tap areas, quiet chrome, readable hierarchy. */
+.overlay-actions .priority { display:flex!important; flex-direction:column!important; align-items:center!important; justify-content:center!important; gap:3px!important; }
+.overlay-actions .priority span { width:auto!important; font-size:10px!important; line-height:1.1!important; white-space:nowrap!important; }
+.overlay-actions .priority svg { width:20px!important; height:20px!important; }
+.profile-connect-link { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px; padding:10px 14px; border-radius:14px; font-size:14px; color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,var(--surface)); }
+.profile-connect-link svg { width:18px; height:18px; }
+.profile-connect-link:disabled { opacity:.65; cursor:default; }
+.about-profile-section .profile-connect-link { margin-top:14px; }
+.full-actions { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
 .preview-shell { --mobile-label:.875rem; --mobile-meta:.75rem; }
 .phone-screen { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
 .app-head { min-height:76px; border-bottom:1px solid color-mix(in srgb,var(--ink) 7%,transparent); }

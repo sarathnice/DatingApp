@@ -260,7 +260,7 @@ test("settings hub covers account, discovery, safety, and notifications", async 
 });
 
 test("gates a pre-match introduction with Mila Plus", async ({ page }) => {
-  await page.getByRole("button", { name: /Send intro to/i }).first().click();
+  await page.getByRole("button", { name: /Connect with/i }).first().click();
   await expect(page.getByText("Send an introduction before matching").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Continue/i }).first()).toBeVisible();
 });
@@ -322,7 +322,7 @@ test("Arjun sends Priya a contextual introduction and Priya accepts", async ({ p
   const android = page.locator(".device-column.android");
 
   await page.getByRole("group", { name: "Test profile scenario" }).getByRole("button", { name: "Arjun + Priya" }).click();
-  await ios.getByRole("button", { name: "Send intro to Priya" }).click();
+  await ios.getByRole("button", { name: "Connect with Priya" }).click();
   await expect(ios.getByText("Send an introduction before matching", { exact: true })).toBeVisible();
   await ios.getByRole("button", { name: "Continue" }).click();
 
@@ -347,7 +347,7 @@ test("Hana can decline an introduction without opening chat", async ({ page }) =
   const android = page.locator(".device-column.android");
 
   await page.getByRole("group", { name: "Test profile scenario" }).getByRole("button", { name: "Arjun + Hana" }).click();
-  await ios.getByRole("button", { name: "Send intro to Hana" }).click();
+  await ios.getByRole("button", { name: "Connect with Hana" }).click();
   await ios.getByRole("button", { name: "Continue" }).click();
   await ios.getByRole("textbox", { name: "Introduction to Hana" }).fill("Hi Hana, I also enjoy documentaries. Which recent story stayed with you?");
   await ios.getByRole("button", { name: "Send connection" }).click();

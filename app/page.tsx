@@ -1236,11 +1236,11 @@ function MobileScreen({
                           </button>
                           <button
                             className="priority"
-                            aria-label={`Send intro to ${profile.name}`}
+                            aria-label={`Connect with ${profile.name}`}
                             onClick={startIntroduction}
                           >
-                            <Star />
-                            <span>Send intro</span>
+                            <UserPlus />
+                            <span>Connect</span>
                           </button>
                           <button
                             className={`like ${isLiked ? "is-liked" : ""}`}
@@ -1874,10 +1874,10 @@ function MobileScreen({
                   className={`full-connect ${connectionPending ? "is-sent" : ""}`}
                   onClick={startIntroduction}
                   disabled={connectionPending}
-                  aria-label={connectionPending ? `Introduction sent to ${profile.name}` : `Send introduction to ${profile.name}`}
+                  aria-label={connectionPending ? `Connection sent to ${profile.name}` : `Connect with ${profile.name}`}
                 >
-                  {connectionPending ? <Check /> : hasSubscription ? <Send /> : <Crown />}
-                  {connectionPending ? "Intro sent" : "Send intro"}
+                  {connectionPending ? <Check /> : <UserPlus />}
+                  {connectionPending ? "Request sent" : "Connect"}
                 </button>
                 {safetyOpen && (
                   <div className="safety-menu">
@@ -1968,6 +1968,7 @@ function MobileScreen({
                 <section className="modern-profile-section about-profile-section">
                   <header><span>About</span><small>In their own words</small></header>
                   <p>{profile.about}</p>
+                  <button className="profile-connect-link" onClick={startIntroduction} disabled={connectionPending} aria-label={`Connect with ${profile.name} about their story`}><UserPlus /> {connectionPending ? "Request sent" : "Connect"}</button>
                 </section>
                 <section className="profile-fact-grid" aria-label={`${profile.name} at a glance`}>
                   <span><BriefcaseBusiness /><small>Work</small><b>{profile.job}</b></span>
@@ -2007,6 +2008,7 @@ function MobileScreen({
                 </button>
               </div>
               <div className="full-actions">
+                <button className="profile-connect-link" onClick={startIntroduction} disabled={connectionPending} aria-label={`Connect with ${profile.name} from profile actions`}><UserPlus /> {connectionPending ? "Request sent" : "Connect"}</button>
                 <button onClick={() => onProfileOpen(false)}>
                   <X /> Maybe later
                 </button>
