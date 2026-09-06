@@ -18,10 +18,10 @@ test("discover spaces are visually grouped and open a matching feed", async ({ p
 
   await page.getByRole("button", { name: /New nearby/ }).first().click();
   await expect(page.getByRole("status").first()).toContainText("New nearby selected");
-  await expect(page.getByText("Nearby · 1 profile", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Nearby · 3 profiles", { exact: true }).first()).toBeVisible();
 
-  await page.getByRole("button", { name: "Change distance from 5 miles" }).first().click();
-  await expect(page.getByRole("status").first()).toContainText("Within 10 mi · 3 profiles");
+  await page.getByRole("button", { name: "Change distance from 10 miles" }).first().click();
+  await expect(page.getByRole("status").first()).toContainText("Within 25 mi · 3 profiles");
   await expect(page.getByText("Nearby · 3 profiles", { exact: true }).first()).toBeVisible();
 
   await page.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Discover" }).click();
@@ -35,7 +35,7 @@ test("discover spaces are visually grouped and open a matching feed", async ({ p
 const discoverCollections = [
   { tile: "Long-term love", label: "Long-term love", ios: "Priya, 31", android: "Leo, 31", iosCount: 3, androidCount: 3 },
   { tile: "Free this week", label: "Free this week", ios: "Hana, 29", android: "Marcus, 32", iosCount: 3, androidCount: 3 },
-  { tile: "New nearby", label: "Nearby", ios: "Maya, 29", android: "Arjun, 31", iosCount: 1, androidCount: 3 },
+  { tile: "New nearby", label: "Nearby", ios: "Maya, 29", android: "Arjun, 31", iosCount: 3, androidCount: 3 },
   { tile: "Across borders", label: "Across borders", ios: "Sofia, 30", android: "Ravi, 32", iosCount: 3, androidCount: 3 },
   { tile: "Culture & roots", label: "Culture & roots", ios: "Amira, 31", android: "Mateo, 31", iosCount: 3, androidCount: 3 },
   { tile: "Voice first", label: "Voice first", ios: "Yuki, 29", android: "Theo, 33", iosCount: 3, androidCount: 3 },
@@ -47,7 +47,7 @@ for (const collection of discoverCollections) {
     await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Discover" }).click();
     await ios.getByRole("button", { name: new RegExp(collection.tile, "i") }).click();
     await expect(ios.getByRole("heading", { name: collection.ios })).toBeVisible();
-    await expect(ios.getByText(`${collection.label} · ${collection.iosCount} profile${collection.iosCount === 1 ? "" : "s"}`, { exact: true })).toBeVisible();
+    await expect(ios.getByText(`${collection.label} · ${collection.iosCount} profiles`, { exact: true })).toBeVisible();
   });
 
   test(`Android Discover opens the ${collection.tile} collection`, async ({ page }) => {

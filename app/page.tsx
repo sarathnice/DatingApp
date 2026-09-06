@@ -509,6 +509,8 @@ function MobileScreen({
 }) {
   const dragStart = useRef<{ x: number; y: number } | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (advanceTimer.current) clearTimeout(advanceTimer.current); }, []);
   const suppressClick = useRef(false);
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
@@ -781,6 +783,11 @@ function MobileScreen({
         : [...current, profileId],
     );
   const advanceProfile = (action: "liked" | "passed" | "intro" | "next") => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    if (action === "next" && queue.length < 2) {
+      setDiscoverNotice("Only one profile within this distance. Increase your distance to meet more people.");
+      return;
+    }
     const actedOn = profile.name;
     if (action === "liked") {
       setLikedProfileIds((current) =>
@@ -799,13 +806,16 @@ function MobileScreen({
       action === "intro" ? `Introduction sent to ${actedOn}` :
       action === "passed" ? `Passed on ${actedOn}` : `Showing another profile`,
     );
-    setTimeout(() => {
+    advanceTimer.current = setTimeout(() => {
       setDiscoveryIndex((current) => (current + 1) % queue.length);
       onMediaIndex(0);
       setCardDecision("idle");
+      advanceTimer.current = null;
+      if (queue.length < 2) setDiscoverNotice(`${action === "liked" ? "Like saved." : "You’ve reached the end."} Increase your distance to meet more people.`);
     }, action === "liked" ? 700 : action === "intro" ? 500 : 260);
   };
   const undoProfile = () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
     if (isLiked) {
       setLikedProfileIds((current) => current.filter((id) => id !== profile.id));
       setDiscoveryHistory((items) => {
@@ -840,8 +850,7 @@ function MobileScreen({
     suppressClick.current = didSwipe;
 
     if (Math.abs(y) > Math.abs(x)) {
-      if (y < -58) onProfileOpen(true);
-      else if (y > 58) advanceProfile("next");
+      if (Math.abs(y) > 58) advanceProfile("next");
     } else if (x > 58) advanceProfile("liked");
     else if (x < -58) advanceProfile("passed");
 
@@ -1104,10 +1113,12 @@ function MobileScreen({
                           : undefined
                       }
                       onPointerDown={(e) => {
-                        if (!e.isPrimary) return;
+                        if (!e.isPrimary || e.button !== 0) return;
+                        const target = e.target as Element;
+                        if (target.closest("button") && !target.closest(".media-prev,.media-next")) return;
                         dragStart.current = { x: e.clientX, y: e.clientY };
                         dragOffset.current = { x: 0, y: 0 };
-                        (e.target as Element).setPointerCapture(e.pointerId);
+                        target.setPointerCapture(e.pointerId);
                       }}
                       onPointerMove={(e) => {
                         if (dragStart.current !== null) {
@@ -1121,7 +1132,12 @@ function MobileScreen({
                         }
                       }}
                       onPointerUp={finishSwipe}
-                      onPointerCancel={finishSwipe}
+                      onPointerCancel={() => {
+                        dragStart.current = null;
+                        dragOffset.current = { x: 0, y: 0 };
+                        setDragX(0);
+                        setDragY(0);
+                      }}
                       onClickCapture={(e) => {
                         if (!suppressClick.current) return;
                         e.preventDefault();
@@ -1177,6 +1193,13 @@ function MobileScreen({
                           aria-label="Next photo"
                         />
                         <div className="profile-gradient" />
+                        <div className="browse-guide">
+                          <span>{safeDiscoveryIndex + 1} / {queue.length} · Swipe up to browse</span>
+                          <button onClick={() => advanceProfile("next")} aria-label="Next profile">Next <ChevronRight /></button>
+                        </div>
+                        {(Math.abs(dragX) > 24 || Math.abs(dragY) > 24) && (
+                          <div className="gesture-feedback">{Math.abs(dragY) > Math.abs(dragX) ? "NEXT" : dragX > 0 ? "LIKE" : "PASS"}</div>
+                        )}
                         <div className="profile-details">
                           <div className="name-line">
                             <h2>{profile.name}, {profile.age}</h2>
@@ -2700,7 +2723,7 @@ export default function Home() {
   const [hiddenAndroid, setHiddenAndroid] = useState(false);
   const [mediaIndexIos, setMediaIndexIos] = useState(0);
   const [mediaIndexAndroid, setMediaIndexAndroid] = useState(0);
-  const [radius, setRadius] = useState(5);
+  const [radius, setRadius] = useState(10);
   const [introRequest, setIntroRequest] = useState<IntroRequest | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const selectedWoman = demoProfiles[selectedWomanId];
