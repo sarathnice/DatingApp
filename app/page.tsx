@@ -60,6 +60,11 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import {
+  addBoostCredits,
+  canSendPreMatchIntroduction,
+  consumeBoostCredit,
+} from "@/lib/product-rules";
 
 const themes = [
   { id: "sunrise", name: "Sunrise", note: "Warm & human", color: "#f56300" },
@@ -715,7 +720,7 @@ function MobileScreen({
     window.requestAnimationFrame(() => showConnectPage(mediaIndex, "auto"));
   };
   const startIntroduction = () => {
-    if (!hasSubscription) {
+    if (!canSendPreMatchIntroduction(hasSubscription)) {
       setPendingPremiumAction("intro");
       setMembershipView("plans");
       setPurchaseNotice("Mila Plus is required to send an introduction before matching.");
@@ -2070,7 +2075,13 @@ function MobileScreen({
                   <section className={`boost-status ${boostActive ? "is-active" : ""}`}>
                     <div><Zap /><span><b>{boostActive ? "Boost active · 30:00" : `${boostCredits} Boost${boostCredits === 1 ? "" : "s"} available`}</b><small>{boostActive ? "Your profile is receiving priority visibility nearby." : "Buy a package, then start now or schedule it."}</small></span></div>
                     {!boostActive && <label>Start time<NativeSelect value={boostTime} onChange={(event) => setBoostTime(event.target.value)}><NativeSelectOption>Now</NativeSelectOption><NativeSelectOption>Tonight · 7 PM</NativeSelectOption><NativeSelectOption>Tonight · 9 PM</NativeSelectOption><NativeSelectOption>Tomorrow · 7 PM</NativeSelectOption></NativeSelect></label>}
-                    <button disabled={!boostCredits || boostActive} onClick={() => { setBoostCredits((count) => Math.max(0, count - 1)); setBoostActive(true); setPurchaseNotice(boostTime === "Now" ? "Boost started for 30 minutes." : `Boost scheduled for ${boostTime}.`); }}>{boostActive ? "Boost running" : boostCredits ? (boostTime === "Now" ? "Start 30-minute Boost" : "Schedule Boost") : "Buy Boosts to continue"}</button>
+                    <button disabled={!boostCredits || boostActive} onClick={() => {
+                      const result = consumeBoostCredit(boostCredits);
+                      if (!result.started) return;
+                      setBoostCredits(result.remainingCredits);
+                      setBoostActive(true);
+                      setPurchaseNotice(boostTime === "Now" ? "Boost started for 30 minutes." : `Boost scheduled for ${boostTime}.`);
+                    }}>{boostActive ? "Boost running" : boostCredits ? (boostTime === "Now" ? "Start 30-minute Boost" : "Schedule Boost") : "Buy Boosts to continue"}</button>
                   </section>
                   <div className="boost-list">
                     {boostPackages.map((pack) => <button key={pack.id} aria-pressed={selectedBoost === pack.id} onClick={() => { setSelectedBoost(pack.id); setPurchaseNotice(""); }}>
@@ -2087,7 +2098,7 @@ function MobileScreen({
                 <span><small>{membershipView === "plans" ? selectedMembershipPlan.label : `${selectedBoostPackage.count} Boosts`}</small><b>{membershipView === "plans" ? selectedMembershipPlan.total : selectedBoostPackage.price}</b></span>
                 <button disabled={membershipView === "plans" && hasSubscription && !pendingPremiumAction} onClick={() => {
                   if (membershipView === "boosts") {
-                    setBoostCredits((count) => count + selectedBoostPackage.count);
+                    setBoostCredits((count) => addBoostCredits(count, selectedBoostPackage.count));
                     setPurchaseNotice(`${selectedBoostPackage.count} Boost${selectedBoostPackage.count === 1 ? "" : "s"} added for this preview — no payment was charged.`);
                     return;
                   }
@@ -2239,7 +2250,7 @@ function MobileScreen({
                     <div>
                       <button onClick={() => setIntroDraft(false)}>Discard</button>
                       <button onClick={() => {
-                        if (!hasSubscription) {
+                        if (!canSendPreMatchIntroduction(hasSubscription)) {
                           setIntroDraft(false);
                           setVoiceOpen(false);
                           setPendingPremiumAction("intro");
@@ -2306,6 +2317,12 @@ export default function Home() {
   const [radius, setRadius] = useState(5);
   const [introRequest, setIntroRequest] = useState<IntroRequest | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  useEffect(() => {
+    document.documentElement.dataset.milaReady = "true";
+    return () => {
+      delete document.documentElement.dataset.milaReady;
+    };
+  }, []);
   const matched = decisionIos === "liked" && decisionAndroid === "liked";
   const chatOpen = matched || introRequest?.status === "accepted";
   const sendIntro = (from: string, to: string, text: string) => {

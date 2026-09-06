@@ -1,0 +1,13 @@
+.git
+.github
+.vinext
+.wrangler
+dist
+node_modules
+npm-debug.log*
+playwright-report
+test-results
+*.png
+!public/*.png
+.env*
+!.env.example

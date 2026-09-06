@@ -1,0 +1,12 @@
+services:
+  mila-web:
+    build:
+      context: .
+      target: runtime
+    image: mila-dating-app:local
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      APP_ENV: testing
+    restart: unless-stopped
