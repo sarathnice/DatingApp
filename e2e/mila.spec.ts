@@ -12,12 +12,12 @@ test.afterEach(async ({ page }) => {
 test("discover spaces are visually grouped and open a matching feed", async ({ page }) => {
   await page.getByRole("button", { name: "Discover", exact: true }).first().click();
 
-  await expect(page.getByRole("button", { name: /Ready for real/ }).first()).toBeVisible();
-  await expect(page.getByText("Most popular").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Long-term love/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Voice first/ }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Across borders/ }).first()).toBeVisible();
 
-  await page.getByRole("button", { name: /New in town/ }).first().click();
-  await expect(page.getByRole("status").first()).toContainText("New in town selected");
+  await page.getByRole("button", { name: /New nearby/ }).first().click();
+  await expect(page.getByRole("status").first()).toContainText("New nearby selected");
 });
 
 test("reports a healthy staging service", async ({ page }) => {

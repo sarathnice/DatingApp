@@ -1198,51 +1198,52 @@ function MobileScreen({
               </div>
             )}
             {activeTab === "explore" && (
-              <div className="inner-screen">
+              <div className="inner-screen explore-screen">
                 <span className="screen-kicker">Discover</span>
-                <h2>Date with intention.</h2>
-                <p>Choose a space that matches what you want today.</p>
+                <h2>Find your kind of connection.</h2>
+                <p>Explore people with similar relationship goals.</p>
                 <div className="explore-grid">
-                  <button className="wide explore-ready" onClick={() => openExploreFeed("Ready for real")}>
-                    <span className="explore-art" aria-hidden="true"><Heart /></span>
+                  <button className="explore-longterm" onClick={() => openExploreFeed("Long-term love")}>
+                    <span className="explore-art symbol-longterm" aria-hidden="true" />
                     <span className="explore-copy">
-                      <i>Most popular</i>
-                      <b>Ready for real</b>
-                      <small>Long-term connections · 1.2K nearby</small>
+                      <b>Long-term love</b>
+                      <small>1.3K</small>
                     </span>
-                    <ChevronRight className="explore-arrow" aria-hidden="true" />
                   </button>
-                  <button className="explore-nearby" onClick={() => openExploreFeed("New in town")}>
-                    <span className="explore-art" aria-hidden="true"><MapPin /></span>
+                  <button className="explore-week" onClick={() => openExploreFeed("Free this week")}>
+                    <span className="explore-art symbol-week" aria-hidden="true" />
                     <span className="explore-copy">
-                      <b>New in town</b>
-                      <small>286 nearby</small>
+                      <b>Free this week</b>
+                      <small>180</small>
                     </span>
-                    <ChevronRight className="explore-arrow" aria-hidden="true" />
+                  </button>
+                  <button className="explore-nearby" onClick={() => openExploreFeed("New nearby")}>
+                    <span className="explore-art symbol-nearby" aria-hidden="true" />
+                    <span className="explore-copy">
+                      <b>New nearby</b>
+                      <small>286</small>
+                    </span>
                   </button>
                   <button className="explore-global" onClick={() => openExploreFeed("Across borders")}>
-                    <span className="explore-art" aria-hidden="true"><Globe2 /></span>
+                    <span className="explore-art symbol-global" aria-hidden="true" />
                     <span className="explore-copy">
                       <b>Across borders</b>
-                      <small>640 worldwide</small>
+                      <small>640</small>
                     </span>
-                    <ChevronRight className="explore-arrow" aria-hidden="true" />
-                  </button>
-                  <button className="explore-tonight" onClick={() => openExploreFeed("Free tonight")}>
-                    <span className="explore-art" aria-hidden="true"><Zap /></span>
-                    <span className="explore-copy">
-                      <b>Free tonight</b>
-                      <small>74 available</small>
-                    </span>
-                    <ChevronRight className="explore-arrow" aria-hidden="true" />
                   </button>
                   <button className="explore-culture" onClick={() => openExploreFeed("Culture & roots")}>
-                    <span className="explore-art" aria-hidden="true"><UsersRound /></span>
+                    <span className="explore-art symbol-culture" aria-hidden="true" />
                     <span className="explore-copy">
                       <b>Culture & roots</b>
-                      <small>512 connections</small>
+                      <small>512</small>
                     </span>
-                    <ChevronRight className="explore-arrow" aria-hidden="true" />
+                  </button>
+                  <button className="explore-voice" onClick={() => openExploreFeed("Voice first")}>
+                    <span className="explore-art symbol-voice" aria-hidden="true" />
+                    <span className="explore-copy">
+                      <b>Voice first</b>
+                      <small>96</small>
+                    </span>
                   </button>
                 </div>
               </div>
