@@ -190,11 +190,10 @@ test("mobile overlay labels stay compact without losing their controls", async (
     box: await item.boundingBox(),
     font: await item.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
   })));
-  expect(sizes[0].box!.height).toBeLessThanOrEqual(31);
-  expect(sizes[1].box!.height).toBeLessThanOrEqual(37);
-  expect(sizes[2].box!.height).toBeLessThanOrEqual(31);
-  expect(sizes[2].font).toBeLessThanOrEqual(9);
-  expect(Math.max(...sizes.map((size) => size.font))).toBeLessThanOrEqual(11);
+  expect(sizes[0].box!.height).toBeGreaterThanOrEqual(32);
+  expect(sizes[1].box!.height).toBeGreaterThanOrEqual(44);
+  expect(sizes[2].box!.height).toBeGreaterThanOrEqual(44);
+  expect(Math.min(...sizes.map((size) => size.font))).toBeGreaterThanOrEqual(12);
 });
 
 test("mobile header keeps search beside filters without colliding with voice", async ({ page }) => {
