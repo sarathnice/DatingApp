@@ -1,0 +1,59 @@
+/* Mila: editorial typography, luminous surfaces and a restrained orange signature. */
+.preview-shell.theme-sunrise { --paper:#f5f4f2; --phone:#f7f7f8; --surface:#fff; --soft:#eeedef; --ink:#202024; --accent:#e95d0f; --accent2:#ff984d; }
+.preview-shell { font-family:var(--font-geist-sans),sans-serif; -webkit-font-smoothing:antialiased; }
+.compare-heading h1 { max-width:740px; font-size:clamp(32px,4.6vw,58px); line-height:1.06; font-weight:620; letter-spacing:-.055em; }
+.compare-heading>p { max-width:590px; line-height:1.7; color:var(--ui-muted); }
+.compare-stage { padding-top:42px; }
+.preview-controls { padding:20px 0; gap:20px; border-block:1px solid color-mix(in srgb,var(--ink) 8%,transparent); }
+.device-grid { background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 50%,transparent),var(--soft)); padding:28px; border-radius:36px; }
+.device-caption span { font-size:14px; font-weight:650; letter-spacing:-.02em; }
+.device-caption small { font-size:11px; }
+.phone-brand { font-weight:720; letter-spacing:-.06em; }
+.phone-brand i { box-shadow:0 3px 9px color-mix(in srgb,var(--accent) 24%,transparent); }
+.app-head { background:var(--phone); }
+.inner-screen { padding-top:24px; }
+.inner-screen h2 { font-size:34px; font-weight:600; line-height:1.08; letter-spacing:-.045em; }
+.screen-kicker { font-size:11px; font-weight:650; letter-spacing:.1em; text-transform:uppercase; }
+.inner-screen>p { font-size:14px; line-height:1.6; }
+.name-line h2,.full-name h2,.self-preview-name h2 { font-size:36px; font-weight:580; letter-spacing:-.04em; }
+.profile-details p { font-size:13px; line-height:1.45; }
+.profile-tags { gap:6px; }
+.profile-tags span { border:1px solid #ffffff30; background:#ffffff12; border-radius:10px; backdrop-filter:blur(12px); font-size:12px; padding:6px 9px; }
+.discover-screen .profile-gradient { background:linear-gradient(180deg,transparent 10%,#10101218 35%,#101012d9 78%,#101012f0); }
+.overlay-actions button { box-shadow:0 4px 12px #0002!important; transition:transform .18s ease,background .18s ease; }
+.overlay-actions button:active { transform:scale(.92); }
+.bottom-nav { border-top:1px solid color-mix(in srgb,var(--ink) 6%,transparent); background:var(--phone); }
+.bottom-nav button { font-weight:550; font-size:11px; gap:4px; }
+.bottom-nav button[aria-current=page] { background:color-mix(in srgb,var(--accent) 9%,var(--surface)); color:var(--accent); }
+.bottom-nav svg { stroke-width:1.65; }
+.explore-grid { gap:14px; }
+.explore-grid button,.explore-grid button.wide { border-radius:26px; min-height:218px; grid-template-rows:minmax(0,1fr) 64px; box-shadow:0 4px 16px #11111106; border:1px solid #16161608; }
+.explore-art { min-height:154px; }
+.explore-copy { padding:12px 14px 16px; }
+.explore-grid .explore-copy b { font-size:17px; line-height:1.2; font-weight:630; letter-spacing:-.025em; }
+.explore-grid .explore-copy small { font-size:12px; padding:5px 6px; border-radius:8px; background:#f4f3f5; }
+.likes-tabs { padding:4px; border:1px solid color-mix(in srgb,var(--ink) 5%,transparent); border-radius:16px; background:var(--soft); }
+.likes-tabs button { font-size:13px; border-radius:12px!important; }
+.likes-tabs button[aria-pressed=true] { background:var(--surface); box-shadow:0 2px 6px #00000009; }
+.people-photo,.owner-card { border-radius:26px; box-shadow:0 10px 28px #1414140d; }
+.chat-row { border-color:color-mix(in srgb,var(--ink) 7%,transparent); padding-block:18px; }
+.chat-row b { font-weight:630; letter-spacing:-.015em; }
+.chat-row small { line-height:1.5; }
+.quick-message [data-slot=input] { border:1px solid color-mix(in srgb,var(--ink) 8%,transparent)!important; border-radius:22px!important; }
+.quick-message button { border-radius:50%; }
+.profile-section-list,.modern-profile-section,.profile-quick-links button,.safe-date-card,.ai-match-summary,.calm-mode-card { border:1px solid color-mix(in srgb,var(--ink) 6%,transparent); border-radius:20px; box-shadow:0 3px 12px #00000003; }
+.modern-profile-section { padding:20px; background:var(--surface); margin-block:10px; }
+.modern-profile-section header { margin-bottom:12px; }
+.modern-profile-section p,.modern-profile-section blockquote { line-height:1.65; }
+.full-tags { gap:7px; }
+.full-tags span { border-radius:10px; padding:8px 10px; background:var(--soft); border:0; }
+.account-panel>header,.profile-builder>header { border-bottom:1px solid color-mix(in srgb,var(--ink) 7%,transparent); }
+.account-panel button,.full-actions button { transition:background .18s ease,box-shadow .18s ease; }
+.preview-shell button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+@media(max-width:760px) {
+  .compare-stage { padding-top:24px; }
+  .compare-heading h1 { font-size:34px; }
+  .preview-controls { padding:16px 0; }
+  .device-grid { padding:12px 16px 18px; background:transparent; border-radius:0; }
+}
+@media(prefers-reduced-motion:reduce) { .preview-shell button { transition:none; } }
