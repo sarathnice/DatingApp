@@ -39,6 +39,30 @@ test("opens the Mila preview and profile settings", async ({ page }) => {
   await expect(page.getByText("Discovery preferences").first()).toBeVisible();
 });
 
+test("settings hub covers account, discovery, safety, and notifications", async ({ page }) => {
+  const ios = page.locator(".device-column.ios");
+  await ios.getByRole("navigation", { name: "ios preview pages" }).getByRole("button", { name: "Profile" }).click();
+  await ios.getByRole("button", { name: /Settings & safety/i }).click();
+
+  await expect(ios.getByText("Arjun's account")).toBeVisible();
+  await expect(ios.getByText("Discovery & visibility")).toBeVisible();
+  await expect(ios.getByText("Privacy & safer conversations")).toBeVisible();
+  await expect(ios.getByText("Notifications & media")).toBeVisible();
+
+  const discovery = ios.getByRole("switch", { name: "Enable discovery" });
+  await expect(discovery).toBeChecked();
+  await discovery.click();
+  await expect(discovery).not.toBeChecked();
+  await expect(ios.getByText("Your profile is hidden; matched chats stay open.")).toBeVisible();
+
+  await ios.getByRole("combobox", { name: "Profile visibility" }).selectOption("Incognito");
+  await ios.getByRole("combobox", { name: "Recommendation order" }).selectOption("Recently active");
+  await ios.getByRole("switch", { name: "Verified-only messages" }).click();
+  await expect(ios.getByRole("switch", { name: "Verified-only messages" })).toBeChecked();
+  await ios.getByRole("button", { name: "Done" }).click();
+  await expect(ios.getByRole("heading", { name: "My profile" })).toBeVisible();
+});
+
 test("gates a pre-match introduction with Mila Plus", async ({ page }) => {
   await page.getByRole("button", { name: /Send intro to/i }).first().click();
   await expect(page.getByText("Send an introduction before matching").first()).toBeVisible();

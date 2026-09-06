@@ -720,6 +720,29 @@ button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
 .registration-footer>button:first-child { min-height:44px; padding:0 12px; border:0; background:transparent; color:var(--ink); font-size:13px; }
 .registration-footer>button:first-child:disabled { opacity:.32; }
 
+/* A compact settings hub: broad coverage without a single undifferentiated list. */
+.settings-primary-link { margin-top:4px; padding-inline:12px; border:0; border-radius:16px; background:color-mix(in srgb,var(--accent) 8%,var(--surface)); }
+.settings-primary-link:hover { background:color-mix(in srgb,var(--accent) 8%,var(--surface)); }
+.settings-status-card { min-height:72px; padding:12px 14px; border-radius:18px; background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,var(--surface)),var(--surface)); display:grid; grid-template-columns:42px minmax(0,1fr) 24px; gap:10px; align-items:center; }
+.settings-avatar { width:42px; height:42px; border-radius:14px; background:var(--accent); color:#fff; display:grid; place-items:center; font:500 21px Georgia,serif; }
+.settings-status-card>span { display:flex; flex-direction:column; }
+.settings-status-card b { font-size:14px; }
+.settings-status-card small { margin-top:3px; font-size:11px; color:color-mix(in srgb,var(--ink) 56%,transparent); }
+.settings-status-card>svg { width:21px; color:#23805d; }
+.settings-link-list>button { width:100%; min-height:66px; padding:12px 14px; border:0; border-bottom:1px solid var(--ui-line); background:transparent; color:var(--ink); display:grid; grid-template-columns:22px minmax(0,1fr) 18px; align-items:center; gap:10px; text-align:left; }
+.settings-link-list>button:last-child { border-bottom:0; }
+.settings-link-list>button>svg:first-child { width:18px; color:var(--accent); }
+.settings-link-list>button>svg:last-child { width:16px; opacity:.42; }
+.settings-link-list span { display:flex; flex-direction:column; }
+.settings-link-list b { font-size:14px; font-weight:600; }
+.settings-link-list small { margin-top:3px; font-size:11px; color:color-mix(in srgb,var(--ink) 55%,transparent); }
+.settings-account-actions { margin-top:18px; display:grid; gap:8px; }
+.settings-account-actions button { min-height:48px; border:0; border-radius:14px; background:var(--surface); color:var(--ink); font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; }
+.settings-account-actions svg { width:16px; }
+.settings-account-actions .settings-delete { color:#c43f34; }
+.settings-version { margin:16px 0 0; text-align:center; font-size:10px; color:color-mix(in srgb,var(--ink) 45%,transparent); }
+.theme-paper .settings-primary-link,.theme-paper .settings-status-card,.theme-paper .settings-avatar,.theme-paper .settings-account-actions button { border-radius:0; }
+
 /* Discover action colors keep the same meaning in every visual theme. */
 .preview-shell {
   --icon-like:#ff2d55;

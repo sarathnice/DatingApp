@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   BadgeCheck,
   Ban,
+  Bell,
   Bookmark,
   Bot,
   BriefcaseBusiness,
@@ -21,11 +22,14 @@ import {
   EyeOff,
   Eye,
   Flag,
+  FileText,
   Globe2,
   GraduationCap,
   Heart,
   Languages,
   LocateFixed,
+  LockKeyhole,
+  LogOut,
   MapPin,
   MessageCircle,
   Mic,
@@ -43,10 +47,12 @@ import {
   ShieldCheck,
   Sparkles,
   SlidersHorizontal,
+  Smartphone,
   Star,
   UserPlus,
   UserRound,
   UsersRound,
+  UserX,
   Volume2,
   WandSparkles,
   X,
@@ -80,7 +86,7 @@ const themes = [
 type Theme = (typeof themes)[number]["id"];
 type Tab = "discover" | "explore" | "likes" | "chats" | "you";
 type Platform = "ios" | "android";
-type AccountPanel = "preferences" | "membership" | "registration" | "mila-lab" | null;
+type AccountPanel = "settings" | "preferences" | "membership" | "registration" | "mila-lab" | null;
 type WomanProfileId = "maya" | "priya" | "hana";
 type DemoProfile = {
   id: "maya" | "arjun" | "priya" | "marcus" | "hana" | "leo";
@@ -510,6 +516,16 @@ function MobileScreen({
   const [voiceMessagesAllowed, setVoiceMessagesAllowed] = useState(true);
   const [videoCallsAllowed, setVideoCallsAllowed] = useState(true);
   const [locationSharingAllowed, setLocationSharingAllowed] = useState(false);
+  const [visibilityMode, setVisibilityMode] = useState<"Standard" | "Incognito">("Standard");
+  const [rankingMode, setRankingMode] = useState<"Balanced" | "Recently active">("Balanced");
+  const [verifiedChatOnly, setVerifiedChatOnly] = useState(false);
+  const [messageReview, setMessageReview] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(false);
+  const [smsNotifications, setSmsNotifications] = useState(false);
+  const [autoplayVideos, setAutoplayVideos] = useState(true);
+  const [activeStatus, setActiveStatus] = useState(true);
+  const [pauseLength, setPauseLength] = useState("Not paused");
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(`mila-liked-${platform}`);
@@ -1605,6 +1621,14 @@ function MobileScreen({
                   <ChevronDown />
                 </div>
                 <h3 className="profile-settings-title">Account &amp; discovery</h3>
+                <button className="setting-row setting-row-button settings-primary-link" onClick={() => setAccountPanel("settings")}>
+                  <Settings2 />
+                  <span>
+                    <b>Settings &amp; safety</b>
+                    <small>Account, visibility, messages and notifications</small>
+                  </span>
+                  <ChevronRight />
+                </button>
                 <button className="setting-row setting-row-button" onClick={() => setAccountPanel("preferences")}>
                   <SlidersHorizontal />
                   <span>
@@ -1637,14 +1661,14 @@ function MobileScreen({
                   </span>
                   <ChevronRight />
                 </button>
-                <div className="setting-row">
+                <button className="setting-row setting-row-button" onClick={() => setAccountPanel("settings")}>
                   <ShieldCheck />
                   <span>
                     <b>Safety center</b>
-                    <small>Verification and privacy</small>
+                    <small>Verification, blocked contacts and date sharing</small>
                   </span>
-                  <ChevronDown />
-                </div>
+                  <ChevronRight />
+                </button>
               </div>
             )}
           </div>
@@ -2085,6 +2109,74 @@ function MobileScreen({
                   <div className="toggle-setting"><span><b>Live location</b><small>Off by default; sharing always expires</small></span><Switch size="sm" checked={locationSharingAllowed} onCheckedChange={setLocationSharingAllowed} aria-label="Allow temporary location sharing" /></div>
                 </section>
                 <p className="privacy-copy"><ShieldCheck /> These preferences are private. Mila shows a boundary only when another person attempts the related action.</p>
+              </div>
+            </section>
+          )}
+          {accountPanel === "settings" && (
+            <section className="account-panel settings-hub-panel">
+              <header className="account-panel-header">
+                <button onClick={() => setAccountPanel(null)} aria-label="Close settings"><ArrowLeft /></button>
+                <span><b>Settings &amp; safety</b><small>Simple controls, grouped by purpose</small></span>
+                <button className="panel-save" onClick={() => { setProfileNotice("Settings saved"); setAccountPanel(null); }}>Done</button>
+              </header>
+              <div className="account-panel-scroll">
+                <div className="settings-status-card">
+                  <div className="settings-avatar">{viewerName.slice(0, 1)}</div>
+                  <span><b>{viewerName}&apos;s account</b><small>Photo verified · Email verified</small></span>
+                  <ShieldCheck />
+                </div>
+
+                <h3>Account</h3>
+                <section className="settings-card settings-link-list">
+                  <button><Smartphone /><span><b>Phone number</b><small>••• ••• ••90</small></span><ChevronRight /></button>
+                  <button><MessageCircle /><span><b>Email</b><small>s••••••@gmail.com · Verified</small></span><ChevronRight /></button>
+                  <button><UsersRound /><span><b>Connected accounts</b><small>Manage sign-in methods</small></span><ChevronRight /></button>
+                  <button onClick={() => { setMembershipView("plans"); setAccountPanel("membership"); }}><CreditCard /><span><b>Payments &amp; subscriptions</b><small>{hasSubscription ? "Mila Plus active" : "Free plan"}</small></span><ChevronRight /></button>
+                </section>
+
+                <h3>Discovery &amp; visibility</h3>
+                <section className="settings-card">
+                  <button className="preference-link" onClick={() => setAccountPanel("preferences")}><SlidersHorizontal /><span><b>Who you want to meet</b><small>{radius} mi · Ages {ageMin}–{ageMax} · {interestedIn}</small></span><ChevronRight /></button>
+                  <div className="toggle-setting"><span><b>Enable discovery</b><small>{hidden ? "Your profile is hidden; matched chats stay open." : "Your profile can appear to new people."}</small></span><Switch size="sm" checked={!hidden} onCheckedChange={(value) => onHidden(!value)} aria-label="Enable discovery" /></div>
+                  <label className="select-setting"><span><b>Visibility</b><small>Incognito shows you only to people you like</small></span><NativeSelect aria-label="Profile visibility" value={visibilityMode} onChange={(event) => setVisibilityMode(event.target.value as "Standard" | "Incognito")}><NativeSelectOption>Standard</NativeSelectOption><NativeSelectOption>Incognito</NativeSelectOption></NativeSelect></label>
+                  <label className="select-setting"><span><b>Recommendation order</b><small>Balanced protects against popularity-only ranking</small></span><NativeSelect aria-label="Recommendation order" value={rankingMode} onChange={(event) => setRankingMode(event.target.value as "Balanced" | "Recently active")}><NativeSelectOption>Balanced</NativeSelectOption><NativeSelectOption>Recently active</NativeSelectOption></NativeSelect></label>
+                  <label className="select-setting"><span><b>Pause new connections</b><small>Current matches and chats stay available</small></span><NativeSelect aria-label="Pause new connections" value={pauseLength} onChange={(event) => { setPauseLength(event.target.value); if (event.target.value !== "Not paused") onHidden(true); }}><NativeSelectOption>Not paused</NativeSelectOption><NativeSelectOption>24 hours</NativeSelectOption><NativeSelectOption>72 hours</NativeSelectOption><NativeSelectOption>1 week</NativeSelectOption><NativeSelectOption>Until I return</NativeSelectOption></NativeSelect></label>
+                </section>
+
+                <h3>Privacy &amp; safer conversations</h3>
+                <section className="settings-card">
+                  <div className="toggle-setting"><span><b>Verified-only messages</b><small>Ask unverified matches to verify before messaging.</small></span><Switch size="sm" checked={verifiedChatOnly} onCheckedChange={setVerifiedChatOnly} aria-label="Verified-only messages" /></div>
+                  <div className="toggle-setting"><span><b>Review harmful messages</b><small>Mila privately flags risky language before it is sent. You always decide.</small></span><Switch size="sm" checked={messageReview} onCheckedChange={setMessageReview} aria-label="Review harmful messages" /></div>
+                  <button className="preference-link"><UserX /><span><b>Blocked contacts</b><small>Avoid people already in your contacts</small></span><ChevronRight /></button>
+                  <button className="preference-link" onClick={() => setDatePlanSaved(true)}><CalendarHeart /><span><b>{datePlanSaved ? "Date plan ready" : "Share a date plan"}</b><small>{datePlanSaved ? "Trusted-contact link prepared for this preview" : "Send time, place and check-in to someone you trust"}</small></span><ChevronRight /></button>
+                  <button className="preference-link"><ShieldCheck /><span><b>Safety center</b><small>Report, crisis help and safer dating guidance</small></span><ChevronRight /></button>
+                  <button className="preference-link" onClick={() => setAccountPanel("mila-lab")}><LockKeyhole /><span><b>Boundary Passport</b><small>Voice, video and location permissions</small></span><ChevronRight /></button>
+                </section>
+
+                <h3>Notifications &amp; media</h3>
+                <section className="settings-card">
+                  <div className="toggle-setting"><span><b>Push notifications</b><small>Matches, messages and safety check-ins</small></span><Switch size="sm" checked={pushNotifications} onCheckedChange={setPushNotifications} aria-label="Push notifications" /></div>
+                  <div className="toggle-setting"><span><b>Email</b><small>Account and product updates</small></span><Switch size="sm" checked={emailNotifications} onCheckedChange={setEmailNotifications} aria-label="Email notifications" /></div>
+                  <div className="toggle-setting"><span><b>SMS</b><small>Security alerts only</small></span><Switch size="sm" checked={smsNotifications} onCheckedChange={setSmsNotifications} aria-label="SMS notifications" /></div>
+                  <div className="toggle-setting"><span><b>Autoplay videos</b><small>Turn off to save data</small></span><Switch size="sm" checked={autoplayVideos} onCheckedChange={setAutoplayVideos} aria-label="Autoplay videos" /></div>
+                  <div className="toggle-setting"><span><b>Show active status</b><small>Share a general recent activity signal</small></span><Switch size="sm" checked={activeStatus} onCheckedChange={setActiveStatus} aria-label="Show active status" /></div>
+                  <button className="preference-link" onClick={beginVoice}><Bell /><span><b>Daily voice briefing</b><small>{briefScheduled ? `${briefTime} daily` : "Off · Configure in Mila Voice"}</small></span><ChevronRight /></button>
+                </section>
+
+                <h3>Help, privacy &amp; legal</h3>
+                <section className="settings-card settings-link-list">
+                  <button><MessageCircle /><span><b>Help &amp; support</b><small>Answers and contact options</small></span><ChevronRight /></button>
+                  <button><ShieldCheck /><span><b>Community guidelines</b><small>Respect, consent and authentic behavior</small></span><ChevronRight /></button>
+                  <button><FileText /><span><b>Privacy choices</b><small>Download data, cookies and permissions</small></span><ChevronRight /></button>
+                  <button><FileText /><span><b>Terms &amp; policies</b><small>Plain-language summaries and full terms</small></span><ChevronRight /></button>
+                </section>
+                <div className="settings-account-actions">
+                  <button onClick={() => setProfileNotice("Restore purchases checked — preview only")}>Restore purchases</button>
+                  <button onClick={() => setProfileNotice("Share link prepared — preview only")}>Share Mila</button>
+                  <button className="settings-logout" onClick={() => setProfileNotice("Logout confirmation would appear in the real app") }><LogOut /> Log out</button>
+                  <button className="settings-delete" onClick={() => setProfileNotice("Account deletion requires identity confirmation and a cooling-off step") }><UserX /> Delete account</button>
+                </div>
+                <p className="settings-version">Mila preview · version 0.35</p>
               </div>
             </section>
           )}
