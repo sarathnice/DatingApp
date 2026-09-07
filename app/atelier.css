@@ -137,3 +137,44 @@
   .profile-tags span { padding:6px; }
   .profile-quick-links { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+/* Profile photography: separate source files, natural aspect ratio, and face-aware crops. */
+.profile-image,
+.full-profile-hero,
+.self-preview-hero,
+.owner-card,
+.owner-photo-strip button,
+.media-thumbs button,
+.intro-avatar,
+.target-mini,
+.match-photo,
+.connect-page-media,
+.connection-owner,
+.connection-share,
+.people-photo,
+.search-profile-avatar {
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  image-rendering:auto;
+}
+.profile-maya { background-image:url('/profiles/maya-1.jpg')!important; background-position:55% center!important; }
+.profile-maya.media-0 { background-image:url('/profiles/maya-1.jpg')!important; background-position:55% center!important; }
+.profile-maya.media-1 { background-image:url('/profiles/maya-2.jpg')!important; background-position:57% center!important; }
+.profile-maya.media-2 { background-image:url('/profiles/maya-3.jpg')!important; background-position:53% center!important; }
+.profile-maya.media-3 { background-image:url('/profiles/maya-4.jpg')!important; background-position:50% center!important; }
+.profile-arjun { background-image:url('/profiles/arjun-1.jpg')!important; background-position:55% center!important; }
+.profile-arjun.media-0 { background-image:url('/profiles/arjun-1.jpg')!important; background-position:55% center!important; }
+.profile-arjun.media-1 { background-image:url('/profiles/arjun-2.jpg')!important; background-position:58% center!important; }
+.profile-arjun.media-2 { background-image:url('/profiles/arjun-3.jpg')!important; background-position:50% center!important; }
+.profile-arjun.media-3 { background-image:url('/profiles/arjun-4.jpg')!important; background-position:57% center!important; }
+.profile-priya { background-image:url('/profiles/priya-1.jpg')!important; background-position:50% center!important; }
+.profile-marcus { background-image:url('/profiles/marcus-1.jpg')!important; background-position:54% center!important; }
+.profile-hana { background-image:url('/profiles/hana-1.jpg')!important; background-position:50% center!important; }
+.profile-leo { background-image:url('/profiles/leo-1.jpg')!important; background-position:52% center!important; }
+.full-profile-hero { height:clamp(340px,54dvh,520px); min-height:340px; }
+.self-preview-hero { height:clamp(300px,50dvh,460px); }
+.profile-image { background-color:#252525; }
+@media (max-height:720px) {
+  .full-profile-hero { height:48dvh; min-height:300px; }
+  .self-preview-hero { height:44dvh; min-height:280px; }
+}
